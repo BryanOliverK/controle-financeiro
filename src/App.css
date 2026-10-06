@@ -1,0 +1,858 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+/* ========================= */
+/* TOKENS                    */
+/* ========================= */
+
+:root {
+  --bg: #f2f4f3;
+  --surface: #ffffff;
+  --surface-2: #f7f9f8;
+  --border: #e3e8e6;
+  --text: #16211e;
+  --text-muted: #5f6f6a;
+
+  --brand: #0f6b5c;
+  --brand-hover: #0b5448;
+  --brand-soft: rgba(15, 107, 92, 0.14);
+  --on-brand: #ffffff;
+
+  --entrada: #178a5a;
+  --saida: #d1432f;
+
+  --hero-bg: #12342d;
+  --hero-text: #ffffff;
+  --hero-muted: rgba(255, 255, 255, 0.7);
+
+  --shadow: 0 1px 2px rgba(16, 33, 30, 0.05), 0 6px 20px rgba(16, 33, 30, 0.05);
+
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 8px;
+
+  --font: "Manrope", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+.modo-escuro {
+  --surface: #181d1c;
+  --surface-2: #1f2524;
+  --border: #2b3331;
+  --text: #eef3f1;
+  --text-muted: #9aaaa5;
+
+  --brand: #3fb59d;
+  --brand-hover: #5cc8b1;
+  --brand-soft: rgba(63, 181, 157, 0.2);
+  --on-brand: #08201b;
+
+  --entrada: #4cc38a;
+  --saida: #f2735f;
+
+  --hero-bg: #0f3a31;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* ========================= */
+/* BASE                      */
+/* ========================= */
+
+html {
+  background-color: #f2f4f3;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background-color: #f2f4f3;
+  min-height: 100vh;
+  color: #16211e;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Camada responsável pela transição do fundo */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-color: #0e1211;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+body:has(.modo-escuro)::before {
+  opacity: 1;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Valores monetários alinhados em coluna */
+
+.card p,
+.info-transacao p,
+.info-transacao .entrada-texto,
+.info-transacao .saida-texto {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Foco visível para teclado */
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ========================= */
+/* LAYOUT                    */
+/* ========================= */
+
+.app {
+  display: flex;
+  min-height: 100vh;
+  color: var(--text);
+}
+
+.conteudo {
+  flex: 1;
+  min-width: 0;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 40px 28px 64px;
+}
+
+/* Troca de tema suave: tudo muda de cor no mesmo ritmo do fundo (0.3s).
+   Fica antes das regras específicas, então elas continuam mandando. */
+
+.app,
+.app * {
+  transition-property: background-color, color, border-color, box-shadow, filter;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+}
+
+/* Header */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-marca {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icone {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background-color: var(--brand-soft);
+  font-size: 26px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.header p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Botão do modo */
+
+.btn-tema {
+  position: relative;
+  flex-shrink: 0;
+  width: 64px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--border);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-tema[aria-checked="true"] {
+  background-color: var(--brand);
+}
+
+/* Bolinha que desliza e gira */
+
+.btn-tema-bolinha {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  font-size: 14px;
+  transition: transform 0.45s cubic-bezier(0.34, 1.4, 0.64, 1), width 0.15s ease;
+}
+
+.btn-tema-bolinha::before {
+  content: "☀️";
+}
+
+.btn-tema[aria-checked="true"] .btn-tema-bolinha {
+  transform: translateX(30px) rotate(360deg);
+}
+
+.btn-tema[aria-checked="true"] .btn-tema-bolinha::before {
+  content: "🌙";
+}
+
+.btn-tema:active .btn-tema-bolinha {
+  width: 30px;
+}
+
+@media (max-width: 700px) {
+  .header h1 {
+    font-size: 22px;
+  }
+}
+
+/* ========================= */
+/* RESUMO                    */
+/* ========================= */
+
+.resumo {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.card {
+  background-color: var(--surface);
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.card p {
+  margin: 10px 0 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Saldo é o destaque da tela */
+
+.card.saldo {
+  background-color: var(--hero-bg);
+  border-color: transparent;
+}
+
+.card.saldo h3 {
+  color: var(--hero-muted);
+}
+
+.card.saldo p {
+  color: var(--hero-text);
+  font-size: 36px;
+}
+
+/* Entradas e saídas: discretos, só a cor do valor */
+
+.card.entrada p {
+  color: var(--entrada);
+}
+
+.card.saida p {
+  color: var(--saida);
+}
+
+/* ========================= */
+/* FORMULÁRIO E FILTROS      */
+/* ========================= */
+
+.formulario,
+.filtros {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.formulario {
+  margin-bottom: 28px;
+  padding: 14px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.filtros {
+  margin-bottom: 20px;
+}
+
+.formulario input,
+.formulario select,
+.filtros input,
+.filtros select {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.formulario input::placeholder,
+.filtros input::placeholder {
+  color: var(--text-muted);
+}
+
+.formulario input:focus,
+.formulario select:focus,
+.filtros input:focus,
+.filtros select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.formulario input[type="text"] {
+  flex: 2;
+}
+
+.filtros input {
+  flex: 1;
+}
+
+.formulario button {
+  padding: 12px 22px;
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: var(--brand);
+  color: var(--on-brand);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.formulario button:hover {
+  background-color: var(--brand-hover);
+}
+
+.formulario button:active {
+  transform: translateY(1px);
+}
+
+/* ========================= */
+/* TRANSAÇÕES                */
+/* ========================= */
+
+.transacoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.transacao {
+  background-color: var(--surface);
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--border);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.transacao:hover {
+  border-color: var(--brand);
+}
+
+.info-transacao h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.info-transacao p {
+  margin: 0 0 4px;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.info-transacao span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.info-transacao .entrada-texto {
+  color: var(--entrada);
+  font-weight: 700;
+}
+
+.info-transacao .saida-texto {
+  color: var(--saida);
+  font-weight: 700;
+}
+
+/* Botões de ação: discretos até o hover */
+
+.btn-editar,
+.btn-excluir {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-editar {
+  color: var(--brand);
+}
+
+.btn-editar:hover {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+
+.btn-excluir {
+  color: var(--saida);
+}
+
+.btn-excluir:hover {
+  background-color: var(--saida);
+  border-color: var(--saida);
+  color: #fff;
+}
+
+/* ========================= */
+/* RESPONSIVIDADE            */
+/* ========================= */
+
+@media (max-width: 700px) {
+  .conteudo {
+    padding: 20px 16px 104px;
+  }
+
+  .resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .formulario,
+  .filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .transacao {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+.data-transacao {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ========================= */
+/* NAVEGAÇÃO LATERAL         */
+/* ========================= */
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  flex-shrink: 0;
+  width: 92px;
+  height: 100vh;
+  padding: 28px 12px;
+  box-sizing: border-box;
+  background-color: var(--surface);
+  border-right: 1px solid var(--border);
+}
+
+/* Ícone que abre e fecha o menu (mostra a tela atual) */
+
+.menu-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 0 4px;
+  border: none;
+  border-radius: 18px;
+  background-color: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.menu-toggle:hover {
+  background-color: var(--surface-2);
+}
+
+.menu-toggle .sidebar-icone {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  animation: pop-icone 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.menu-seta {
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.35s ease;
+}
+
+.aberto .menu-seta {
+  transform: rotate(180deg);
+}
+
+@keyframes pop-icone {
+  from {
+    transform: scale(0.6) rotate(-90deg);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* Lista que expande */
+
+.menu-lista {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.35s ease, opacity 0.25s ease;
+}
+
+.aberto .menu-lista {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.menu-lista-interno {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-lista-interno > :first-child {
+  margin-top: 8px;
+}
+
+/* Lista simples (sem o menu que expande): empilha e centraliza */
+
+.sidebar > nav:not(.menu-lista) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  gap: 6px;
+  padding: 10px 4px;
+  border: none;
+  border-radius: 18px;
+  background-color: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.3s ease,
+    transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1),
+    background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Só some quando está dentro do menu recolhido */
+
+.menu-lista-interno .sidebar-item {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.aberto .menu-lista-interno .sidebar-item {
+  opacity: 1;
+  transform: none;
+}
+
+.aberto .sidebar-item:nth-child(2) {
+  transition-delay: 0.05s;
+}
+
+.aberto .sidebar-item:nth-child(3) {
+  transition-delay: 0.1s;
+}
+
+.sidebar-item:hover {
+  background-color: var(--surface-2);
+}
+
+.sidebar-icone {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 21px;
+}
+
+.sidebar-item.ativo {
+  background-color: var(--brand-soft);
+  color: var(--brand);
+}
+
+.sidebar-item.ativo .sidebar-icone {
+  background-color: var(--brand);
+  border-color: var(--brand);
+}
+
+/* ========================= */
+/* TELAS / ABAS              */
+/* ========================= */
+
+.aba {
+  animation: entrar-aba 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes entrar-aba {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.titulo-secao {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.secao-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.secao-topo .titulo-secao {
+  margin: 0;
+}
+
+.link-ver-todas {
+  border: none;
+  background: none;
+  color: var(--brand);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.link-ver-todas:hover {
+  text-decoration: underline;
+}
+
+.vazio {
+  padding: 32px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.acoes {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+} 
+
+/* ========================= */
+/* AÇÕES DO TOPO / PRIVACIDADE */
+/* ========================= */
+
+.header-acoes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-olho {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background-color: var(--surface);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.btn-olho:hover {
+  border-color: var(--brand);
+}
+
+/* Valores borrados no modo privado */
+
+.privado .card p,
+.privado .info-transacao p:not(.data-transacao):not(.entrada-texto):not(.saida-texto) {
+  filter: blur(9px);
+  user-select: none;
+}
+
+@media (max-width: 700px) {
+  .sidebar {
+    position: fixed;
+    top: auto;
+    bottom: 16px;
+    left: 16px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 10px;
+    width: auto;
+    height: auto;
+    padding: 0;
+    background: none;
+    border: none;
+  }
+
+  .menu-toggle {
+    flex-direction: row;
+    padding: 6px 12px 6px 6px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background-color: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  .menu-seta {
+    transform: rotate(180deg);
+  }
+
+  .aberto .menu-seta {
+    transform: none;
+  }
+
+  .sidebar-item {
+    flex-direction: row;
+    padding: 6px 16px 6px 6px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background-color: var(--surface);
+    box-shadow: var(--shadow);
+    font-size: 13px;
+  }
+
+  .sidebar-item.ativo {
+    background-color: var(--surface);
+    border-color: var(--brand);
+  }
+
+  .acoes {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aba {
+    animation: none;
+  }
+}
+
+.btn-olho {
+  color: var(--text-muted);
+}
+
+.btn-olho:hover {
+  color: var(--brand);
+}
+
+.grupo-data {
+  margin-bottom: 30px;
+}
+
+.titulo-data {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #777;
+  letter-spacing: 0.5px;
+}
+
+.grupo-data .transacao {
+  margin-bottom: 8px;
+}
+

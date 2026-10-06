@@ -1,0 +1,235 @@
+/* ========================= */
+/* GASTOS POR CATEGORIA      */
+/* ========================= */
+
+.categorias-dashboard {
+  width: 100%;
+}
+
+.categorias-grafico-card {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 40px;
+  align-items: center;
+
+  padding: 28px;
+
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+/* ========================= */
+/* GRÁFICO DE ROSCA          */
+/* ========================= */
+
+.grafico-rosca {
+  width: 250px;
+  height: 250px;
+
+  margin: auto;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  position: relative;
+
+  animation: aparecerGrafico 0.7s ease;
+}
+
+/* Cria o buraco do gráfico */
+
+.grafico-rosca::before {
+  content: "";
+
+  position: absolute;
+
+  width: 155px;
+  height: 155px;
+
+  border-radius: 50%;
+
+  background-color: var(--surface);
+}
+
+/* Conteúdo no centro */
+
+.grafico-centro {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+}
+
+.grafico-centro span {
+  font-size: 13px;
+  font-weight: 600;
+
+  color: var(--text-muted);
+}
+
+.grafico-centro strong {
+  margin-top: 5px;
+
+  font-size: 22px;
+  font-weight: 800;
+
+  color: var(--text);
+
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================= */
+/* LEGENDA                   */
+/* ========================= */
+
+.categorias-legenda {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+}
+
+.legenda-item {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 12px 14px;
+
+  border-radius: var(--radius-md);
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.legenda-item:hover {
+  background-color: var(--surface-2);
+
+  transform: translateX(4px);
+}
+
+.legenda-nome {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  color: var(--text);
+}
+
+.legenda-cor {
+  width: 10px;
+  height: 10px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+}
+
+.legenda-valores {
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+}
+
+.legenda-valores strong {
+  font-size: 14px;
+  font-weight: 700;
+
+  color: var(--text);
+
+  font-variant-numeric: tabular-nums;
+}
+
+.legenda-valores span {
+  min-width: 48px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  text-align: right;
+
+  color: var(--text-muted);
+
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================= */
+/* MODO PRIVADO              */
+/* ========================= */
+
+.privado .grafico-centro strong,
+.privado .legenda-valores strong {
+  filter: blur(9px);
+
+  user-select: none;
+}
+
+/* ========================= */
+/* ANIMAÇÃO                  */
+/* ========================= */
+
+@keyframes aparecerGrafico {
+  from {
+    opacity: 0;
+    transform: scale(0.85) rotate(-20deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+/* ========================= */
+/* RESPONSIVIDADE             */
+/* ========================= */
+
+@media (max-width: 800px) {
+
+  .categorias-grafico-card {
+    grid-template-columns: 1fr;
+
+    gap: 28px;
+  }
+
+  .grafico-rosca {
+    width: 220px;
+    height: 220px;
+  }
+
+  .grafico-rosca::before {
+    width: 135px;
+    height: 135px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .grafico-rosca {
+    animation: none;
+  }
+
+  .legenda-item {
+    transition: none;
+  }
+}
