@@ -807,13 +807,18 @@ select:focus-visible {
   }
 
   .sidebar-item {
+    width: auto;
+    min-width: 0;
     flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
     padding: 6px 16px 6px 6px;
     border: 1px solid var(--border);
     border-radius: 999px;
     background-color: var(--surface);
     box-shadow: var(--shadow);
     font-size: 13px;
+    gap: 8px;
   }
 
   .sidebar-item.ativo {
