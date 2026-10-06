@@ -1,0 +1,117 @@
+/* ========================= */
+/* AVISOS (toast)            */
+/* ========================= */
+
+.aviso {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: calc(100vw - 32px);
+  padding: 12px 18px;
+  border-radius: 999px;
+  background-color: var(--text);
+  color: var(--surface);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  font-size: 14px;
+  font-weight: 600;
+  animation: aviso-entrar 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.aviso.erro {
+  background-color: var(--saida);
+  color: #fff;
+}
+
+.aviso button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@keyframes aviso-entrar {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -18px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* ========================= */
+/* FILTRO DE MÊS             */
+/* ========================= */
+
+.barra-mes {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.barra-mes select {
+  padding: 9px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.barra-mes select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+/* ========================= */
+/* EXPORTAR + CATEGORIA      */
+/* ========================= */
+
+.btn-exportar {
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn-exportar:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.info-transacao .categoria {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso {
+    animation: none;
+  }
+}

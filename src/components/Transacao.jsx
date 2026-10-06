@@ -1,11 +1,24 @@
+const nomesCategorias = {
+    alimentacao: "🍔 Alimentação",
+    lazer: "🎮 Lazer",
+    casa: "🏠 Casa",
+    transporte: "🚗 Transporte",
+    salario: "💰 Salário",
+    educacao: "📚 Educação",
+    compras: "🛒 Compras",
+    outros: "📦 Outros"
+}
+
 function Transacao({descricao, valor, tipo, categoria, data}) {
     return (
         <div className="info-transacao">   
                 <h3>{descricao}</h3>
 
-                <span className="categoria">
-                    {categoria}
-                </span>
+                {categoria && (
+                    <span className="categoria">
+                        {nomesCategorias[categoria] || categoria}
+                    </span>
+                )}
 
                 <p>
                     {tipo === "entrada" ? "+" : "-"}R$ {valor.toLocaleString("pt-BR",{

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import Header from './components/Header'
 import Resumo from './components/Resumo'
@@ -7,6 +7,27 @@ import Categorias from './components/Categorias'
 
 import './App.css'
 import './categorias.css'
+import './menu-mobile.css'
+import './extras.css'
+
+const LIMITE_DESCRICAO = 40
+
+// Fica fora do componente para o React não reclamar de função "impura" no render
+function novoId() {
+  return Date.now()
+}
+
+function chaveMes(data) {
+  const d = new Date(data)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+}
+
+function nomeMes(chave) {
+  const [ano, mes] = chave.split("-")
+  const nome = new Date(Number(ano), Number(mes) - 1, 1)
+    .toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+  return nome.charAt(0).toUpperCase() + nome.slice(1)
+}
 
 function App() {
 
@@ -18,16 +39,10 @@ function App() {
 
   const [aba, setAba] = useState("inicio")
   const [privado, setPrivado] = useState(true)
-
-  const [saldo, setSaldo] = useState(() => {
-    const saldoSalvo = localStorage.getItem("saldo")
-
-    if (saldoSalvo) {
-      return Number(saldoSalvo)
-    }
-
-    return 0
-  })
+  const [menuAberto, setMenuAberto] = useState(false)
+  const [mes, setMes] = useState("todos")
+  const [aviso, setAviso] = useState(null)
+  const avisoTimer = useRef(null)
 
   const [descricao, setDescricao] = useState("")
   const [valor, setValor] = useState("")
@@ -35,25 +50,6 @@ function App() {
   const [categoria, setCategoria] = useState("")
 
   const [transacaoEditando, setTransacaoEditando] = useState(null)
-
-  const [entradas, setEntradas] = useState(() => {
-    const entradasSalvas = localStorage.getItem("entradas")
-
-    if (entradasSalvas) {
-      return Number(entradasSalvas)
-    }
-
-    return 0
-  })
-  const [saidas, setSaidas] = useState(() => {
-    const saidasSalvas = localStorage.getItem("saidas")
-
-    if (saidasSalvas) {
-      return Number(saidasSalvas)
-    }
-
-    return 0
-  })
 
   const [modoEscuro, setModoEscuro] = useState(() => {
     const temaSalvo = localStorage.getItem("modoEscuro")
@@ -80,67 +76,51 @@ function App() {
   },[transacoes])
 
   useEffect(() => {
-    localStorage.setItem("saldo", saldo)
-  }, [saldo])
-
-  useEffect(() => {
-    localStorage.setItem("entradas", entradas)
-  }, [entradas])
-
-  useEffect(() => {
-    localStorage.setItem("saidas", saidas)
-  }, [saidas])
-
-  useEffect(() => {
     localStorage.setItem("modoEscuro", JSON.stringify(modoEscuro))
   }, [modoEscuro])
 
   // Funções
 
+  function mostrarAviso(texto, tipo = "info", acao = null) {
+    clearTimeout(avisoTimer.current)
+    setAviso({ id: novoId(), texto, tipo, acao })
+    avisoTimer.current = setTimeout(() => setAviso(null), acao ? 5000 : 3000)
+  }
+
   function adicionarTransacao() {
 
-    if (descricao === "") {
-      alert("Adicione uma Descrição!")
+    if (descricao.trim() === "") {
+      mostrarAviso("Adicione uma Descrição!", "erro")
       return
     }
 
     if (valor === "") {
-      alert("Adicione um valor!")
+      mostrarAviso("Adicione um valor!", "erro")
       return
     }
 
     if (tipo === "") {
-      alert("Adicione um tipo")
+      mostrarAviso("Adicione um tipo", "erro")
       return
     }
 
     if (categoria === "") {
-      alert("Selecione uma categoria")
+      mostrarAviso("Selecione uma categoria", "erro")
       return
     }
 
     const valorNumerico = Number(valor)
 
     if (valorNumerico <= 0) {
-      alert("Adicione um valor válido")
+      mostrarAviso("Adicione um valor válido", "erro")
       return
-    }
-
-    if (tipo === "entrada") {
-      setSaldo(saldo + valorNumerico)
-      setEntradas(entradas + valorNumerico)
-    }
-
-    if (tipo === "saida") {
-      setSaldo(saldo - valorNumerico)
-      setSaidas(saidas + valorNumerico)
     }
 
     setTransacoes([
       ...transacoes,
       {
-        id: Date.now(),
-        descricao: descricao,
+        id: novoId(),
+        descricao: descricao.trim(),
         valor: valorNumerico,
         tipo,
         categoria,
@@ -152,6 +132,7 @@ function App() {
     setValor("")
     setTipo("")
     setCategoria("")
+    mostrarAviso("Transação adicionada")
   }
 
   function editarTransacao(id) {
@@ -173,49 +154,31 @@ function App() {
 
       // Validações
 
-      if (descricao === "") {
-        alert("Adicione uma Descrição!")
+      if (descricao.trim() === "") {
+        mostrarAviso("Adicione uma Descrição!", "erro")
         return
       }
 
       if (valor === "") {
-        alert("Adicione um valor!")
+        mostrarAviso("Adicione um valor!", "erro")
         return
       }
 
       const novoValor = Number(valor)
 
       if (novoValor <= 0) {
-        alert("Adicione um valor válido")
+        mostrarAviso("Adicione um valor válido", "erro")
         return
       }
 
       if (tipo === "") {
-        alert("Adicione um tipo")
+        mostrarAviso("Adicione um tipo", "erro")
         return
       }
 
       if (categoria === "") {
-        alert("Selecione uma categoria")
+        mostrarAviso("Selecione uma categoria", "erro")
         return
-      }
-
-      // Encontra a transação antiga
-
-      const transacaoAntiga = transacoes.find((transacao) => {
-        return transacao.id === transacaoEditando
-      })
-
-      // Desfaz o valor da transação antiga
-
-      if (transacaoAntiga.tipo === "entrada") {
-        setSaldo((saldoAtual) => saldoAtual - transacaoAntiga.valor)
-        setEntradas((entradasAtuais) => entradasAtuais - transacaoAntiga.valor)
-      }
-
-      if (transacaoAntiga.tipo === "saida") {
-        setSaldo((saldoAtual) => saldoAtual + transacaoAntiga.valor)
-        setSaidas((saidasAtuais) => saidasAtuais - transacaoAntiga.valor)
       }
 
       // Atualiza a transação
@@ -226,7 +189,7 @@ function App() {
 
           return {
             ...transacao,
-            descricao: descricao,
+            descricao: descricao.trim(),
             valor: novoValor,        
             tipo: tipo,
             categoria: categoria
@@ -237,23 +200,12 @@ function App() {
         return transacao
       })
 
-      // Aplica o novo valor
-
-      if (tipo === "entrada") {
-        setSaldo((saldoAtual) => saldoAtual + novoValor)
-        setEntradas((entradasAtuais) => entradasAtuais + novoValor)
-      }
-
-      if (tipo === "saida") {
-        setSaldo((saldoAtual) => saldoAtual - novoValor)
-        setSaidas((saidasAtuais) => saidasAtuais + novoValor)
-      }
-
       setTransacoes(novasTransacoes)
 
       // Sai do modo de edição
 
       setTransacaoEditando(null)
+      mostrarAviso("Transação atualizada")
       setDescricao("")
       setValor("")
       setCategoria("")
@@ -268,25 +220,47 @@ function App() {
 
   function excluirTransacao(id) {
 
-    const transacao = transacoes.find((transacao) => {
-      return transacao.id === id
+    const indice = transacoes.findIndex((transacao) => transacao.id === id)
+    const removida = transacoes[indice]
+
+    setTransacoes(transacoes.filter((transacao) => transacao.id !== id))
+
+    mostrarAviso("Transação excluída", "info", () => {
+      setTransacoes((atuais) => {
+        const copia = [...atuais]
+        copia.splice(Math.min(indice, copia.length), 0, removida)
+        return copia
+      })
+      setAviso(null)
     })
+  }
 
-    if (transacao.tipo === "entrada") {
-      setSaldo(saldo - transacao.valor)
-      setEntradas(entradas - transacao.valor)
-    }
+  function exportarCSV() {
 
-    if (transacao.tipo === "saida") {
-      setSaldo(saldo + transacao.valor)
-      setSaidas(saidas - transacao.valor)
-    }
+    const cabecalho = ["Data", "Descrição", "Tipo", "Categoria", "Valor"]
 
-    const novastransacoes = transacoes.filter((transacao) => {
-      return transacao.id !== id
-    })
+    const linhas = transacoesOrdenadas.map((transacao) => [
+      new Date(transacao.data).toLocaleDateString("pt-BR"),
+      `"${transacao.descricao.replace(/"/g, '""')}"`,
+      transacao.tipo === "entrada" ? "Entrada" : "Saída",
+      transacao.categoria || "",
+      transacao.valor.toFixed(2).replace(".", ",")
+    ])
 
-    setTransacoes(novastransacoes)
+    const csv = "\ufeff" + [cabecalho, ...linhas]
+      .map((linha) => linha.join(";"))
+      .join("\n")
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+
+    link.href = url
+    link.download = "transacoes.csv"
+    link.click()
+
+    URL.revokeObjectURL(url)
+    mostrarAviso("Arquivo exportado")
   }
 
   // Filtra as transações pela busca
@@ -324,7 +298,28 @@ function App() {
     }).toUpperCase()
   }
 
-  const transacoesFiltradas = transacoes.filter((transacao) => {
+  const mesesDisponiveis = [...new Set(transacoes.map((t) => chaveMes(t.data)))]
+    .sort()
+    .reverse()
+
+  const mesAtivo =
+    mes === "todos" || mesesDisponiveis.includes(mes) ? mes : "todos"
+
+  const transacoesDoMes = mesAtivo === "todos"
+    ? transacoes
+    : transacoes.filter((t) => chaveMes(t.data) === mesAtivo)
+
+  const entradas = transacoesDoMes
+    .filter((t) => t.tipo === "entrada")
+    .reduce((total, t) => total + t.valor, 0)
+
+  const saidas = transacoesDoMes
+    .filter((t) => t.tipo === "saida")
+    .reduce((total, t) => total + t.valor, 0)
+
+  const saldo = entradas - saidas
+
+  const transacoesFiltradas = transacoesDoMes.filter((transacao) => {
     return (
       transacao.descricao
         .toLowerCase()
@@ -367,7 +362,7 @@ function App() {
     return grupos
   }, {})
   
-  const gastosPorCategoria = transacoes.reduce((grupos, transacao) => {
+  const gastosPorCategoria = transacoesDoMes.reduce((grupos, transacao) => {
     if (transacao.tipo === "saida") {
       if (!grupos[transacao.categoria]) {
         grupos[transacao.categoria] = 0
@@ -393,9 +388,11 @@ function App() {
     { id: "nova", icone: "➕", nome: "Adicionar" }
   ]
 
-  const ultimasTransacoes = [...transacoes]
+  const ultimasTransacoes = [...transacoesDoMes]
     .sort((a, b) => b.id - a.id)
     .slice(0, 3)
+
+  const abaAtual = abas.find((item) => item.id === aba)
 
   function iniciarEdicao(id) {
     editarTransacao(id)
@@ -411,20 +408,42 @@ function App() {
   return (
     <div className={classesApp}>
 
-      <aside className="sidebar">
-        <nav>
-          {abas.map((item) => (
-            <button
-              key={item.id}
-              className={aba === item.id ? "sidebar-item ativo" : "sidebar-item"}
-              onClick={() => setAba(item.id)}
-              aria-current={aba === item.id ? "page" : undefined}
-            >
-              <span className="sidebar-icone">{item.icone}</span>
-              <span className="sidebar-nome">{item.nome}</span>
-            </button>
-          ))}
+      <aside className={menuAberto ? "sidebar aberto" : "sidebar"}>
+
+        <div
+          className="menu-fundo"
+          onClick={() => setMenuAberto(false)}
+        />
+
+        <button
+          className="menu-toggle"
+          onClick={() => setMenuAberto(!menuAberto)}
+          aria-expanded={menuAberto}
+          aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
+        >
+          <span className="sidebar-icone" key={aba}>{abaAtual.icone}</span>
+          <span className="menu-seta">⌄</span>
+        </button>
+
+        <nav className="menu-lista">
+          <div className="menu-lista-interno">
+            {abas.map((item) => (
+              <button
+                key={item.id}
+                className={aba === item.id ? "sidebar-item ativo" : "sidebar-item"}
+                onClick={() => {
+                  setAba(item.id)
+                  setMenuAberto(false)
+                }}
+                aria-current={aba === item.id ? "page" : undefined}
+              >
+                <span className="sidebar-icone">{item.icone}</span>
+                <span className="sidebar-nome">{item.nome}</span>
+              </button>
+            ))}
+          </div>
         </nav>
+
       </aside>
 
       <main className="conteudo">
@@ -451,6 +470,21 @@ function App() {
             </button>
           </div>
         </Header>
+
+        {aba !== "nova" && mesesDisponiveis.length > 0 && (
+          <div className="barra-mes">
+            <select
+              value={mesAtivo}
+              onChange={(e) => setMes(e.target.value)}
+              aria-label="Filtrar por mês"
+            >
+              <option value="todos">Todos os meses</option>
+              {mesesDisponiveis.map((m) => (
+                <option key={m} value={m}>{nomeMes(m)}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="aba" key={aba}>
 
@@ -518,6 +552,10 @@ function App() {
                   <option value="maiorValor">Maior valor</option>
                   <option value="menorValor">Menor valor</option>
                 </select>
+
+                <button className="btn-exportar" onClick={exportarCSV}>
+                  Exportar CSV
+                </button>
               </div>
             
               <div className="transacoes">
@@ -588,15 +626,33 @@ function App() {
 
               <div className="formulario">
 
-                <input
-                  type="text"
-                  placeholder="Descrição"
-                  value={descricao}
-                  onChange={(e) => setDescricao(e.target.value)}
-                />
+                <div className="campo-descricao">
+                  <input
+                    type="text"
+                    placeholder="Descrição"
+                    value={descricao}
+                    maxLength={LIMITE_DESCRICAO}
+                    onChange={(e) =>
+                      setDescricao(e.target.value.slice(0, LIMITE_DESCRICAO))
+                    }
+                  />
+
+                  <span
+                    className={
+                      descricao.length >= LIMITE_DESCRICAO
+                        ? "contador cheio"
+                        : "contador"
+                    }
+                  >
+                    {descricao.length}/{LIMITE_DESCRICAO}
+                  </span>
+                </div>
 
                 <input
                   type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
                   placeholder="Valor"
                   value={valor}
                   onChange={(e) => setValor(e.target.value)}
@@ -639,6 +695,16 @@ function App() {
         </div>
 
       </main>
+
+      {aviso && (
+        <div className={"aviso " + aviso.tipo} key={aviso.id} role="status">
+          <span>{aviso.texto}</span>
+
+          {aviso.acao && (
+            <button onClick={aviso.acao}>Desfazer</button>
+          )}
+        </div>
+      )}
 
     </div>
   )

@@ -1,0 +1,209 @@
+/* ========================================= */
+/* MENU RECOLHÍVEL (só no celular)           */
+/* Importar DEPOIS do App.css e categorias.css */
+/* ========================================= */
+
+/* ----- Desktop: tudo igual a antes, menu sempre aberto ----- */
+
+.sidebar .menu-toggle,
+.sidebar .menu-fundo {
+  display: none;
+}
+
+.sidebar .menu-lista {
+  display: block;
+  grid-template-rows: none;
+  opacity: 1;
+}
+
+.sidebar .menu-lista-interno {
+  overflow: visible;
+}
+
+.sidebar .menu-lista-interno > :first-child {
+  margin-top: 0;
+}
+
+.sidebar .menu-lista-interno .sidebar-item {
+  opacity: 1;
+  transform: none;
+}
+
+/* ----- Celular: botão que expande para cima ----- */
+
+@media (max-width: 700px) {
+
+  .sidebar .menu-toggle {
+    display: flex;
+  }
+
+  /* Fundo escurecido: toque fora para fechar */
+
+  .sidebar .menu-fundo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .sidebar.aberto .menu-fundo {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* A lista flutua acima do botão, sem empurrar nada */
+
+  .sidebar .menu-lista {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: visibility 0s linear 0.5s;
+  }
+
+  .sidebar.aberto .menu-lista {
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+
+  .sidebar .menu-lista-interno {
+    gap: 10px;
+  }
+
+  .sidebar-nome {
+    white-space: nowrap;
+  }
+
+  /* Botão: responde ao toque e ganha destaque quando abre */
+
+  .sidebar .menu-toggle {
+    transition: transform 0.2s ease,
+      box-shadow 0.35s ease,
+      border-color 0.35s ease,
+      background-color 0.3s ease;
+  }
+
+  .sidebar .menu-toggle:active {
+    transform: scale(0.94);
+  }
+
+  .sidebar.aberto .menu-toggle {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 4px var(--brand-soft), var(--shadow);
+  }
+
+  .sidebar .menu-toggle .sidebar-icone {
+    transition: transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1),
+      background-color 0.3s ease,
+      border-color 0.3s ease;
+  }
+
+  .sidebar.aberto .menu-toggle .sidebar-icone {
+    transform: scale(1.1);
+  }
+
+  .sidebar .menu-seta {
+    transition: transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+
+  /* Fechando: as opções recolhem para o botão, de cima para baixo */
+
+  .sidebar .menu-lista-interno .sidebar-item {
+    opacity: 0;
+    transform: translateY(28px) scale(0.8);
+    transform-origin: bottom left;
+    filter: blur(4px);
+    transition: opacity 0.22s ease,
+      transform 0.3s cubic-bezier(0.4, 0, 1, 1),
+      filter 0.22s ease,
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  .sidebar .menu-lista-interno .sidebar-item:nth-child(2) {
+    transition-delay: 0.04s, 0.04s, 0.04s, 0s, 0s;
+  }
+
+  .sidebar .menu-lista-interno .sidebar-item:nth-child(3) {
+    transition-delay: 0.08s, 0.08s, 0.08s, 0s, 0s;
+  }
+
+  .sidebar .menu-lista-interno .sidebar-item:nth-child(4) {
+    transition-delay: 0.12s, 0.12s, 0.12s, 0s, 0s;
+  }
+
+  /* Abrindo: sobem do botão em cascata, com um leve balanço no final */
+
+  .sidebar.aberto .menu-lista-interno .sidebar-item {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+    transition: opacity 0.35s ease,
+      transform 0.55s cubic-bezier(0.34, 1.35, 0.64, 1),
+      filter 0.35s ease,
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  .sidebar.aberto .menu-lista-interno .sidebar-item:nth-child(4) {
+    transition-delay: 0s, 0s, 0s, 0s, 0s;
+  }
+
+  .sidebar.aberto .menu-lista-interno .sidebar-item:nth-child(3) {
+    transition-delay: 0.06s, 0.06s, 0.06s, 0s, 0s;
+  }
+
+  .sidebar.aberto .menu-lista-interno .sidebar-item:nth-child(2) {
+    transition-delay: 0.12s, 0.12s, 0.12s, 0s, 0s;
+  }
+
+  .sidebar.aberto .menu-lista-interno .sidebar-item:nth-child(1) {
+    transition-delay: 0.18s, 0.18s, 0.18s, 0s, 0s;
+  }
+}
+
+/* ========================= */
+/* CAMPO DESCRIÇÃO + CONTADOR */
+/* ========================= */
+
+.campo-descricao {
+  position: relative;
+  display: flex;
+  flex: 2;
+}
+
+.campo-descricao input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 58px;
+}
+
+.contador {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.contador.cheio {
+  color: var(--saida);
+}
+
+@media (max-width: 700px) {
+  .campo-descricao {
+    flex: none;
+  }
+}
