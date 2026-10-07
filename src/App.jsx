@@ -4,11 +4,13 @@ import Header from './components/Header'
 import Resumo from './components/Resumo'
 import Transacao from './components/Transacao'
 import Categorias from './components/Categorias'
+import Caixinhas from './components/Caixinhas'
 
 import './App.css'
 import './categorias.css'
 import './menu-mobile.css'
 import './extras.css'
+import './caixinhas.css'
 
 const LIMITE_DESCRICAO = 40
 
@@ -44,6 +46,16 @@ function App() {
   const [aviso, setAviso] = useState(null)
   const avisoTimer = useRef(null)
 
+  const [caixinhas, setCaixinhas] = useState(() => {
+    const salvas = localStorage.getItem("caixinhas")
+
+    if (salvas) {
+      return JSON.parse(salvas)
+    }
+
+    return []
+  })
+
   const [descricao, setDescricao] = useState("")
   const [valor, setValor] = useState("")
   const [tipo, setTipo] = useState("")
@@ -76,6 +88,10 @@ function App() {
   },[transacoes])
 
   useEffect(() => {
+    localStorage.setItem("caixinhas", JSON.stringify(caixinhas))
+  }, [caixinhas])
+
+  useEffect(() => {
     localStorage.setItem("modoEscuro", JSON.stringify(modoEscuro))
   }, [modoEscuro])
 
@@ -85,6 +101,120 @@ function App() {
     clearTimeout(avisoTimer.current)
     setAviso({ id: novoId(), texto, tipo, acao })
     avisoTimer.current = setTimeout(() => setAviso(null), acao ? 5000 : 3000)
+  }
+
+  function criarCaixinha({ nome, emoji, metaValor, metaData }) {
+
+    if (nome.trim() === "") {
+      mostrarAviso("Dê um nome para a caixinha", "erro")
+      return false
+    }
+
+    const temMeta = metaValor !== ""
+
+    if (temMeta && (Number(metaValor) <= 0 || metaData === "")) {
+      mostrarAviso("Informe o valor e a data da meta", "erro")
+      return false
+    }
+
+    setCaixinhas((atuais) => [
+      ...atuais,
+      {
+        id: novoId(),
+        nome: nome.trim().slice(0, 30),
+        emoji,
+        saldo: 0,
+        meta: temMeta ? { valor: Number(metaValor), data: metaData } : null,
+        historico: []
+      }
+    ])
+
+    mostrarAviso("Caixinha criada")
+    return true
+  }
+
+  function movimentarCaixinha(id, tipoMov, valorMov) {
+
+    const caixinha = caixinhas.find((c) => c.id === id)
+
+    if (!caixinha) {
+      return
+    }
+
+    if (!(valorMov > 0)) {
+      mostrarAviso("Digite um valor válido", "erro")
+      return
+    }
+
+    if (tipoMov === "retirar" && valorMov > caixinha.saldo) {
+      mostrarAviso("Saldo insuficiente na caixinha", "erro")
+      return
+    }
+
+    const guardando = tipoMov === "guardar"
+    const data = new Date().toISOString()
+
+    setCaixinhas((atuais) => atuais.map((c) => {
+      if (c.id !== id) {
+        return c
+      }
+
+      return {
+        ...c,
+        saldo: guardando ? c.saldo + valorMov : c.saldo - valorMov,
+        historico: [
+          { id: novoId(), tipo: tipoMov, valor: valorMov, data },
+          ...c.historico
+        ]
+      }
+    }))
+
+    // O dinheiro sai (ou volta) do saldo principal
+    setTransacoes((atuais) => [
+      ...atuais,
+      {
+        id: novoId(),
+        descricao: `${guardando ? "Guardado em" : "Retirado de"} ${caixinha.nome}`,
+        valor: valorMov,
+        tipo: guardando ? "saida" : "entrada",
+        categoria: "caixinha",
+        data
+      }
+    ])
+
+    mostrarAviso(guardando ? "Dinheiro guardado" : "Dinheiro retirado")
+  }
+
+  function excluirCaixinha(id) {
+
+    const caixinha = caixinhas.find((c) => c.id === id)
+
+    if (!caixinha) {
+      return
+    }
+
+    // O que estava guardado volta para o saldo principal
+    if (caixinha.saldo > 0) {
+      setTransacoes((atuais) => [
+        ...atuais,
+        {
+          id: novoId(),
+          descricao: `Resgate de ${caixinha.nome}`,
+          valor: caixinha.saldo,
+          tipo: "entrada",
+          categoria: "caixinha",
+          data: new Date().toISOString()
+        }
+      ])
+    }
+
+    setCaixinhas((atuais) => atuais.filter((c) => c.id !== id))
+
+    mostrarAviso(
+      caixinha.saldo > 0
+        ? "Caixinha excluída e valor devolvido ao saldo"
+        : "Caixinha excluída"
+    )
   }
 
   function adicionarTransacao() {
@@ -310,14 +440,18 @@ function App() {
     : transacoes.filter((t) => chaveMes(t.data) === mesAtivo)
 
   const entradas = transacoesDoMes
-    .filter((t) => t.tipo === "entrada")
+    .filter((t) => t.tipo === "entrada" && t.categoria !== "caixinha")
     .reduce((total, t) => total + t.valor, 0)
 
   const saidas = transacoesDoMes
-    .filter((t) => t.tipo === "saida")
+    .filter((t) => t.tipo === "saida" && t.categoria !== "caixinha")
     .reduce((total, t) => total + t.valor, 0)
 
-  const saldo = entradas - saidas
+  const guardadoNasCaixinhas = transacoesDoMes
+    .filter((t) => t.categoria === "caixinha")
+    .reduce((total, t) => total + (t.tipo === "saida" ? t.valor : -t.valor), 0)
+
+  const saldo = entradas - saidas - guardadoNasCaixinhas
 
   const transacoesFiltradas = transacoesDoMes.filter((transacao) => {
     return (
@@ -363,7 +497,7 @@ function App() {
   }, {})
   
   const gastosPorCategoria = transacoesDoMes.reduce((grupos, transacao) => {
-    if (transacao.tipo === "saida") {
+    if (transacao.tipo === "saida" && transacao.categoria !== "caixinha") {
       if (!grupos[transacao.categoria]) {
         grupos[transacao.categoria] = 0
       }
@@ -385,6 +519,7 @@ function App() {
     { id: "inicio", icone: "📊", nome: "Início" },
     { id: "transacoes", icone: "💳", nome: "Transações" },
     { id: "graficos", icone: "📈", nome: "Gráficos" },
+    { id: "caixinhas", icone: "🐷", nome: "Caixinhas" },
     { id: "nova", icone: "➕", nome: "Adicionar" }
   ]
 
@@ -471,7 +606,7 @@ function App() {
           </div>
         </Header>
 
-        {aba !== "nova" && mesesDisponiveis.length > 0 && (
+        {aba !== "nova" && aba !== "caixinhas" && mesesDisponiveis.length > 0 && (
           <div className="barra-mes">
             <select
               value={mesAtivo}
@@ -581,6 +716,7 @@ function App() {
                           data={transacao.data}
                         />
 
+                        {transacao.categoria !== "caixinha" && (
                         <div className="acoes">
 
                           <button
@@ -598,6 +734,7 @@ function App() {
                           </button>
 
                         </div>
+                        )}
 
                       </div>
                     ))}
@@ -614,6 +751,19 @@ function App() {
               <Categorias
                 gastosPorCategoria={gastosPorCategoria}
                 totalGastos={totalGastos}
+              />
+            </>
+          )}
+
+          {aba === "caixinhas" && (
+            <>
+              <h2 className="titulo-secao">Caixinhas</h2>
+
+              <Caixinhas
+                caixinhas={caixinhas}
+                onCriar={criarCaixinha}
+                onMovimentar={movimentarCaixinha}
+                onExcluir={excluirCaixinha}
               />
             </>
           )}

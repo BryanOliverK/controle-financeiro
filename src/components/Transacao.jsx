@@ -6,7 +6,8 @@ const nomesCategorias = {
     salario: "💰 Salário",
     educacao: "📚 Educação",
     compras: "🛒 Compras",
-    outros: "📦 Outros"
+    outros: "📦 Outros",
+    caixinha: "🐷 Caixinha"
 }
 
 function Transacao({descricao, valor, tipo, categoria, data}) {
