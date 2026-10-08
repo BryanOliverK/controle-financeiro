@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 const EMOJIS = ["🐷", "💰", "✈️", "🏠", "🚗", "🎓", "🛡️", "🎁"]
 const DIAS_UTEIS_MES = 21
@@ -188,23 +188,14 @@ function CaixinhaCard({ caixinha, taxaAnual, onMovimentar, onExcluir }) {
   )
 }
 
-function Caixinhas({ caixinhas, onCriar, onMovimentar, onExcluir }) {
-
-  const [cdi, setCdi] = useState(() => localStorage.getItem("cdi") || "14.5")
-  const [pctCdi, setPctCdi] = useState(() => localStorage.getItem("pctCdi") || "100")
+function Caixinhas({
+  caixinhas, cdi, pctCdi, onCdi, onPctCdi, onCriar, onMovimentar, onExcluir
+}) {
 
   const [nome, setNome] = useState("")
   const [emoji, setEmoji] = useState("🐷")
   const [metaValor, setMetaValor] = useState("")
   const [metaData, setMetaData] = useState("")
-
-  useEffect(() => {
-    localStorage.setItem("cdi", cdi)
-  }, [cdi])
-
-  useEffect(() => {
-    localStorage.setItem("pctCdi", pctCdi)
-  }, [pctCdi])
 
   const taxaAnual = (Number(cdi) / 100) * (Number(pctCdi) / 100)
 
@@ -228,7 +219,7 @@ function Caixinhas({ caixinhas, onCriar, onMovimentar, onExcluir }) {
             inputMode="decimal"
             step="0.01"
             value={cdi}
-            onChange={(e) => setCdi(e.target.value)}
+            onChange={(e) => onCdi(e.target.value)}
           />
         </label>
 
@@ -239,7 +230,7 @@ function Caixinhas({ caixinhas, onCriar, onMovimentar, onExcluir }) {
             inputMode="decimal"
             step="1"
             value={pctCdi}
-            onChange={(e) => setPctCdi(e.target.value)}
+            onChange={(e) => onPctCdi(e.target.value)}
           />
         </label>
       </div>

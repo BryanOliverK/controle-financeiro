@@ -5,18 +5,34 @@ import Resumo from './components/Resumo'
 import Transacao from './components/Transacao'
 import Categorias from './components/Categorias'
 import Caixinhas from './components/Caixinhas'
+import Login from './components/Login'
+import { auth, db, provider } from './firebase'
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut
+} from 'firebase/auth'
+import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 
 import './App.css'
 import './categorias.css'
 import './menu-mobile.css'
 import './extras.css'
 import './caixinhas.css'
+import './login.css'
 
 const LIMITE_DESCRICAO = 40
 
 // Fica fora do componente para o React não reclamar de função "impura" no render
 function novoId() {
   return Date.now()
+}
+
+// Junta duas listas pelo id (usado só no primeiro acesso de um aparelho)
+function unirPorId(remotas, locais) {
+  const ids = new Set(remotas.map((item) => item.id))
+  return [...remotas, ...locais.filter((item) => !ids.has(item.id))]
 }
 
 function chaveMes(data) {
@@ -56,6 +72,15 @@ function App() {
     return []
   })
 
+  const [cdi, setCdi] = useState(() => localStorage.getItem("cdi") || "14.5")
+  const [pctCdi, setPctCdi] = useState(() => localStorage.getItem("pctCdi") || "100")
+
+  const [usuario, setUsuario] = useState(null)
+  const [verificandoLogin, setVerificandoLogin] = useState(true)
+  const [sincronizado, setSincronizado] = useState(false)
+  const [erroLogin, setErroLogin] = useState("")
+  const ultimoRemoto = useRef("")
+
   const [descricao, setDescricao] = useState("")
   const [valor, setValor] = useState("")
   const [tipo, setTipo] = useState("")
@@ -92,6 +117,117 @@ function App() {
   }, [caixinhas])
 
   useEffect(() => {
+    localStorage.setItem("cdi", cdi)
+  }, [cdi])
+
+  useEffect(() => {
+    localStorage.setItem("pctCdi", pctCdi)
+  }, [pctCdi])
+
+  // Login
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, (pessoa) => {
+      setUsuario(pessoa)
+      setVerificandoLogin(false)
+
+      if (!pessoa) {
+        setSincronizado(false)
+      }
+    })
+  }, [])
+
+  // Recebe os dados da nuvem em tempo real
+
+  useEffect(() => {
+    if (!usuario) {
+      return
+    }
+
+    const referencia = doc(db, "usuarios", usuario.uid)
+
+    return onSnapshot(referencia, (snap) => {
+
+      // Eco das nossas próprias gravações: ignora
+      if (snap.metadata.hasPendingWrites) {
+        return
+      }
+
+      const chaveMigracao = "migrado_" + usuario.uid
+      const primeiraVez = !localStorage.getItem(chaveMigracao)
+
+      if (!snap.exists()) {
+
+        // Ainda não sabemos se é conta nova: espera a resposta do servidor
+        if (snap.metadata.fromCache) {
+          return
+        }
+
+        // Conta nova: o que já existe neste aparelho sobe para a nuvem
+        localStorage.setItem(chaveMigracao, "1")
+        setSincronizado(true)
+        return
+      }
+
+      const dados = snap.data()
+      const remotasT = dados.transacoes || []
+      const remotasC = dados.caixinhas || []
+      const cdiRemoto = dados.cdi ?? "14.5"
+      const pctRemoto = dados.pctCdi ?? "100"
+
+      const chave = JSON.stringify({
+        transacoes: remotasT,
+        caixinhas: remotasC,
+        cdi: cdiRemoto,
+        pctCdi: pctRemoto
+      })
+
+      if (chave !== ultimoRemoto.current) {
+        ultimoRemoto.current = chave
+
+        setTransacoes((locais) =>
+          primeiraVez ? unirPorId(remotasT, locais) : remotasT
+        )
+        setCaixinhas((locais) =>
+          primeiraVez ? unirPorId(remotasC, locais) : remotasC
+        )
+        setCdi(cdiRemoto)
+        setPctCdi(pctRemoto)
+      }
+
+      localStorage.setItem(chaveMigracao, "1")
+      setSincronizado(true)
+    })
+  }, [usuario])
+
+  // Envia as mudanças para a nuvem
+
+  useEffect(() => {
+    if (!usuario || !sincronizado) {
+      return
+    }
+
+    const dados = JSON.parse(JSON.stringify({
+      transacoes,
+      caixinhas,
+      cdi,
+      pctCdi
+    }))
+
+    const chave = JSON.stringify(dados)
+
+    if (chave === ultimoRemoto.current) {
+      return
+    }
+
+    ultimoRemoto.current = chave
+
+    setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
+      .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
+
+  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi])
+
+  useEffect(() => {
     localStorage.setItem("modoEscuro", JSON.stringify(modoEscuro))
   }, [modoEscuro])
 
@@ -101,6 +237,38 @@ function App() {
     clearTimeout(avisoTimer.current)
     setAviso({ id: novoId(), texto, tipo, acao })
     avisoTimer.current = setTimeout(() => setAviso(null), acao ? 5000 : 3000)
+  }
+
+  function entrarComGoogle() {
+    setErroLogin("")
+
+    signInWithPopup(auth, provider).catch((erro) => {
+
+      if (
+        erro.code === "auth/popup-closed-by-user" ||
+        erro.code === "auth/cancelled-popup-request"
+      ) {
+        return
+      }
+
+      if (erro.code === "auth/popup-blocked") {
+        signInWithRedirect(auth, provider)
+        return
+      }
+
+      setErroLogin("Não foi possível entrar. Tente novamente.")
+    })
+  }
+
+  function sair() {
+    signOut(auth).then(() => {
+
+      // Limpa a cópia local para ninguém ver seus dados neste aparelho
+      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi"]
+        .forEach((chave) => localStorage.removeItem(chave))
+
+      window.location.reload()
+    })
   }
 
   function criarCaixinha({ nome, emoji, metaValor, metaData }) {
@@ -538,6 +706,18 @@ function App() {
     .filter(Boolean)
     .join(" ")
 
+  if (verificandoLogin) {
+    return <div className="tela-carregando">Carregando...</div>
+  }
+
+  if (!usuario) {
+    return <Login onEntrar={entrarComGoogle} erro={erroLogin} />
+  }
+
+  if (!sincronizado) {
+    return <div className="tela-carregando">Sincronizando seus dados...</div>
+  }
+
   // O que aparece na tela
 
   return (
@@ -602,6 +782,10 @@ function App() {
               onClick={() => setModoEscuro(!modoEscuro)}
             >
               <span className="btn-tema-bolinha" />
+            </button>
+
+            <button className="btn-sair" onClick={sair} title={usuario.email}>
+              Sair
             </button>
           </div>
         </Header>
@@ -761,6 +945,10 @@ function App() {
 
               <Caixinhas
                 caixinhas={caixinhas}
+                cdi={cdi}
+                pctCdi={pctCdi}
+                onCdi={setCdi}
+                onPctCdi={setPctCdi}
                 onCriar={criarCaixinha}
                 onMovimentar={movimentarCaixinha}
                 onExcluir={excluirCaixinha}
