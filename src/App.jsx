@@ -140,66 +140,61 @@ function App() {
   // Recebe os dados da nuvem em tempo real
 
   useEffect(() => {
-    if (!usuario) {
+  if (!usuario) {
+    return
+  }
+
+  const referencia = doc(db, "usuarios", usuario.uid)
+
+  return onSnapshot(referencia, (snap) => {
+    // Eco das nossas próprias gravações: ignora
+    if (snap.metadata.hasPendingWrites) {
       return
     }
 
-    const referencia = doc(db, "usuarios", usuario.uid)
+    const chaveMigracao = "migrado_" + usuario.uid
+    const primeiraVez = !localStorage.getItem(chaveMigracao)
 
-    return onSnapshot(referencia, (snap) => {
-
-      // Eco das nossas próprias gravações: ignora
-      if (snap.metadata.hasPendingWrites) {
-        return
-      }
-
-      const chaveMigracao = "migrado_" + usuario.uid
-      const primeiraVez = !localStorage.getItem(chaveMigracao)
-
-      if (!snap.exists()) {
-
-        // Ainda não sabemos se é conta nova: espera a resposta do servidor
-        if (snap.metadata.fromCache) {
-          return
-        }
-
-        // Conta nova: o que já existe neste aparelho sobe para a nuvem
-        localStorage.setItem(chaveMigracao, "1")
-        setSincronizado(true)
-        return
-      }
-
-      const dados = snap.data()
-      const remotasT = dados.transacoes || []
-      const remotasC = dados.caixinhas || []
-      const cdiRemoto = dados.cdi ?? "14.5"
-      const pctRemoto = dados.pctCdi ?? "100"
-
-      const chave = JSON.stringify({
-        transacoes: remotasT,
-        caixinhas: remotasC,
-        cdi: cdiRemoto,
-        pctCdi: pctRemoto
-      })
-
-      if (chave !== ultimoRemoto.current) {
-        ultimoRemoto.current = chave
-
-        setTransacoes((locais) =>
-          primeiraVez ? unirPorId(remotasT, locais) : remotasT
-        )
-        setCaixinhas((locais) =>
-          primeiraVez ? unirPorId(remotasC, locais) : remotasC
-        )
-        setCdi(cdiRemoto)
-        setPctCdi(pctRemoto)
-      }
-
+    if (!snap.exists()) {
+      // Conta nova: o que já existe neste aparelho sobe para a nuvem
       localStorage.setItem(chaveMigracao, "1")
       setSincronizado(true)
+      return
+    }
+
+    const dados = snap.data()
+
+    const remotasT = dados.transacoes || []
+    const remotasC = dados.caixinhas || []
+    const cdiRemoto = dados.cdi ?? "14.5"
+    const pctRemoto = dados.pctCdi ?? "100"
+
+    const chave = JSON.stringify({
+      transacoes: remotasT,
+      caixinhas: remotasC,
+      cdi: cdiRemoto,
+      pctCdi: pctRemoto
+    })
+
+    if (chave !== ultimoRemoto.current) {
+      ultimoRemoto.current = chave
+
+      setTransacoes((locais) =>
+        primeiraVez ? unirPorId(remotasT, locais) : remotasT
+      )
+
+      setCaixinhas((locais) =>
+        primeiraVez ? unirPorId(remotasC, locais) : remotasC
+      )
+
+      setCdi(cdiRemoto)
+      setPctCdi(pctRemoto)
+    }
+
+    localStorage.setItem(chaveMigracao, "1")
+    setSincronizado(true)
     })
   }, [usuario])
-
   // Envia as mudanças para a nuvem
 
   useEffect(() => {
@@ -225,6 +220,7 @@ function App() {
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
       .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi])
 
   useEffect(() => {

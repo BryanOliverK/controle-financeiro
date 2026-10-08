@@ -1,10 +1,6 @@
 import { initializeApp } from "firebase/app"
 import { getAuth, GoogleAuthProvider } from "firebase/auth"
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager
-} from "firebase/firestore"
+import { getFirestore } from "firebase/firestore"
 
 // Cole aqui a configuração que o Firebase mostra ao registrar o app web
 // (Configurações do projeto > Seus apps > Configuração do SDK).
@@ -27,8 +23,4 @@ export const provider = new GoogleAuthProvider()
 provider.setCustomParameters({ prompt: "select_account" })
 
 // Guarda uma cópia local, então o app continua abrindo sem internet
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-})
+export const db = getFirestore(app)
