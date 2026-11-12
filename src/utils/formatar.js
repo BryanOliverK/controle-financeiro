@@ -116,3 +116,8 @@ export function celulaCSV(texto) {
 
   return `"${valor.replace(/"/g, '""')}"`
 }
+
+// contar(1, "transação", "transações") -> "1 transação"
+export function contar(n, singular, plural) {
+  return `${n} ${n === 1 ? singular : plural}`
+}

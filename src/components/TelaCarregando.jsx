@@ -9,7 +9,7 @@ const SEGUNDOS_ATE_AVISO = 8
 
 // Tela mostrada enquanto o app confere o login e baixa os dados da nuvem.
 // etapa: 0 = verificando login, 1 = sincronizando dados.
-function TelaCarregando({ etapa = 0, erro = "", onTentarNovamente, onSair, modoEscuro }) {
+function TelaCarregando({ etapa = 0, modoEscuro }) {
 
   const [demorando, setDemorando] = useState(false)
   const [largura, setLargura] = useState(0)
@@ -28,12 +28,12 @@ function TelaCarregando({ etapa = 0, erro = "", onTentarNovamente, onSair, modoE
     return () => cancelAnimationFrame(quadro)
   }, [alvo])
 
-  const classes = ["tela-carregando", modoEscuro && "modo-escuro", erro && "com-erro"]
-    .filter(Boolean)
-    .join(" ")
-
   return (
-    <div className={classes} role="status" aria-live="polite">
+    <div
+      className={modoEscuro ? "tela-carregando modo-escuro" : "tela-carregando"}
+      role="status"
+      aria-live="polite"
+    >
       <div className="carregando-card">
 
         <span className="carregando-icone">💰</span>
@@ -66,31 +66,11 @@ function TelaCarregando({ etapa = 0, erro = "", onTentarNovamente, onSair, modoE
           })}
         </ul>
 
-        {erro ? (
-          <>
-            <p className="carregando-erro">{erro}</p>
-
-            <div className="carregando-acoes">
-              {onTentarNovamente && (
-                <button className="carregando-botao" onClick={onTentarNovamente}>
-                  Tentar novamente
-                </button>
-              )}
-
-              {onSair && (
-                <button className="carregando-botao secundario" onClick={onSair}>
-                  Sair
-                </button>
-              )}
-            </div>
-          </>
-        ) : (
-          <p className="carregando-dica">
-            {demorando
-              ? "Está demorando mais que o normal. Confira sua conexão, seus dados continuam salvos."
-              : "Só um instante, estamos buscando seus dados."}
-          </p>
-        )}
+        <p className="carregando-dica">
+          {demorando
+            ? "Está demorando mais que o normal. Confira sua conexão e se algum bloqueador de anúncios está ativo para este site."
+            : "Só um instante, estamos buscando seus dados."}
+        </p>
 
       </div>
     </div>

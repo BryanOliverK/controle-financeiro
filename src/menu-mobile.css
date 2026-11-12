@@ -177,7 +177,7 @@
 .campo-descricao {
   position: relative;
   display: flex;
-  flex: 2;
+  flex: 2 1 240px;
 }
 
 .campo-descricao input {

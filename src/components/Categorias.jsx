@@ -1,24 +1,5 @@
-const categorias = {
-  alimentacao: { nome: "🍔 Alimentação", cor: "#f59e0b" },
-  lazer: { nome: "🎮 Lazer", cor: "#8b5cf6" },
-  casa: { nome: "🏠 Casa", cor: "#3b82f6" },
-  transporte: { nome: "🚗 Transporte", cor: "#06b6d4" },
-  salario: { nome: "💰 Salário", cor: "#22c55e" },
-  educacao: { nome: "📚 Educação", cor: "#ec4899" },
-  compras: { nome: "🛒 Compras", cor: "#f97316" },
-  outros: { nome: "📦 Outros", cor: "#94a3b8" }
-}
-
-const semCategoria = {
-  nome: "📦 Sem categoria",
-  cor: "#94a3b8"
-}
-
-function formatar(valor) {
-  return valor.toLocaleString("pt-BR", {
-    minimumFractionDigits: 2
-  })
-}
+import { SEM_CATEGORIA, infoCategoria } from "../utils/categorias"
+import { brl } from "../utils/formatar"
 
 function Categorias({ gastosPorCategoria, totalGastos }) {
 
@@ -33,17 +14,16 @@ function Categorias({ gastosPorCategoria, totalGastos }) {
     )
   }
 
-  // Cria os segmentos do gráfico
-  const segmentos = lista.map(([chave, valor], index) => {
-    const info = categorias[chave] || semCategoria
+  // Cria os segmentos do gráfico (o início de cada um é a soma dos anteriores)
+  let acumulado = 0
+
+  const segmentos = lista.map(([chave, valor]) => {
+    const info = infoCategoria(chave) || SEM_CATEGORIA
 
     const porcentagem = (valor / totalGastos) * 100
+    const inicio = acumulado
 
-    const inicio = lista
-      .slice(0, index)
-      .reduce((total, [, valorAnterior]) => {
-        return total + (valorAnterior / totalGastos) * 100
-      }, 0)
+    acumulado += porcentagem
 
     return {
       chave,
@@ -58,10 +38,9 @@ function Categorias({ gastosPorCategoria, totalGastos }) {
   // Cria o gradiente do gráfico
   const gradiente = segmentos
     .map((segmento) => {
-      const inicio = segmento.inicio
       const fim = segmento.inicio + segmento.porcentagem
 
-      return `${segmento.cor} ${inicio}% ${fim}%`
+      return `${segmento.cor} ${segmento.inicio}% ${fim}%`
     })
     .join(", ")
 
@@ -72,6 +51,8 @@ function Categorias({ gastosPorCategoria, totalGastos }) {
 
         <div
           className="grafico-rosca"
+          role="img"
+          aria-label="Gráfico de gastos por categoria"
           style={{
             background: `conic-gradient(${gradiente})`
           }}
@@ -80,7 +61,7 @@ function Categorias({ gastosPorCategoria, totalGastos }) {
             <span>Total</span>
 
             <strong>
-              R$ {formatar(totalGastos)}
+              {brl(totalGastos)}
             </strong>
           </div>
         </div>
@@ -108,7 +89,7 @@ function Categorias({ gastosPorCategoria, totalGastos }) {
 
               <div className="legenda-valores">
                 <strong>
-                  R$ {formatar(segmento.valor)}
+                  {brl(segmento.valor)}
                 </strong>
 
                 <span>

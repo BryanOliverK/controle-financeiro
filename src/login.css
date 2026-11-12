@@ -1,9 +1,8 @@
 /* ========================= */
-/* LOGIN / CARREGANDO        */
+/* LOGIN                    */
 /* ========================= */
 
-.tela-login,
-.tela-carregando {
+.tela-login {
   display: grid;
   place-items: center;
   min-height: 100vh;
@@ -13,19 +12,14 @@
   color: var(--text);
 }
 
-.tela-carregando {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
 .login-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
+  box-sizing: border-box;
   width: 100%;
-  max-width: 380px;
+  max-width: 438px;
   padding: 36px 28px;
   text-align: center;
   background-color: var(--surface);
@@ -93,10 +87,6 @@
 }
 
 /* Botão sair, no topo */
-
-.header-acoes {
-  flex-shrink: 0;
-}
 
 .btn-sair {
   padding: 8px 14px;

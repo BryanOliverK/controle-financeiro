@@ -1,11 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import Header from './components/Header'
+import Sidebar from './components/Sidebar'
 import Resumo from './components/Resumo'
 import Transacao from './components/Transacao'
+import FormularioTransacao from './components/FormularioTransacao'
 import Categorias from './components/Categorias'
 import Caixinhas from './components/Caixinhas'
+import Backup from './components/Backup'
 import Login from './components/Login'
+import TelaCarregando from './components/TelaCarregando'
 import { auth, db, provider } from './firebase'
 import {
   onAuthStateChanged,
@@ -15,114 +19,83 @@ import {
 } from 'firebase/auth'
 import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 
+import { useAviso } from './hooks/useAviso'
+import { useLocalStorage } from './hooks/useLocalStorage'
+
+import { categoriaCompativel } from './utils/categorias'
+import {
+  agruparPorData,
+  calcularResumo,
+  filtrar,
+  gastosPorCategoria,
+  listarMeses,
+  ordenar
+} from './utils/calculos'
+import { baixarBackup, lerBackup } from './utils/backup'
+import { baixarCSV } from './utils/exportar'
+import {
+  arredondar,
+  chaveMes,
+  contar,
+  dataParaIso,
+  nomeMes,
+  novoId,
+  paraInputData
+} from './utils/formatar'
+import { unirPorId } from './utils/listas'
+import { validarTransacao } from './utils/validacao'
+
 import './App.css'
 import './categorias.css'
 import './menu-mobile.css'
 import './extras.css'
 import './caixinhas.css'
 import './login.css'
+import './carregando.css'
 
-const LIMITE_DESCRICAO = 40
+// data vazia = hoje (o formulário mostra a data de hoje e resolve ao salvar)
+const FORM_VAZIO = { descricao: "", valor: "", tipo: "", categoria: "", data: "" }
 
-// Fica fora do componente para o React não reclamar de função "impura" no render
-function novoId() {
-  return Date.now()
-}
-
-// Junta duas listas pelo id (usado só no primeiro acesso de um aparelho)
-function unirPorId(remotas, locais) {
-  const ids = new Set(remotas.map((item) => item.id))
-  return [...remotas, ...locais.filter((item) => !ids.has(item.id))]
-}
-
-function chaveMes(data) {
-  const d = new Date(data)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-}
-
-function nomeMes(chave) {
-  const [ano, mes] = chave.split("-")
-  const nome = new Date(Number(ano), Number(mes) - 1, 1)
-    .toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
-  return nome.charAt(0).toUpperCase() + nome.slice(1)
-}
+const ABAS = [
+  { id: "inicio", icone: "📊", nome: "Início" },
+  { id: "transacoes", icone: "💳", nome: "Transações" },
+  { id: "graficos", icone: "📈", nome: "Gráficos" },
+  { id: "caixinhas", icone: "🐷", nome: "Caixinhas" },
+  { id: "nova", icone: "➕", nome: "Adicionar" }
+]
 
 function App() {
 
-  // Estados
+  // Estados da tela
+
+  const [aba, setAba] = useState("inicio")
+  const [privado, setPrivado] = useState(true)
+  const [mes, setMes] = useState("todos")
 
   const [busca, setBusca] = useState("")
   const [filtroTipo, setFiltroTipo] = useState("todos")
   const [ordenacao, setOrdenacao] = useState("recentes")
 
-  const [aba, setAba] = useState("inicio")
-  const [privado, setPrivado] = useState(true)
-  const [menuAberto, setMenuAberto] = useState(false)
-  const [mes, setMes] = useState("todos")
-  const [aviso, setAviso] = useState(null)
-  const avisoTimer = useRef(null)
+  const [form, setForm] = useState(FORM_VAZIO)
+  const [editandoId, setEditandoId] = useState(null)
 
-  const [caixinhas, setCaixinhas] = useState(() => {
-    const salvas = localStorage.getItem("caixinhas")
+  // Dados (guardados no aparelho; a sincronização com a nuvem vem mais abaixo)
 
-    if (salvas) {
-      return JSON.parse(salvas)
-    }
+  const [transacoes, setTransacoes] = useLocalStorage("transacoes", [])
+  const [caixinhas, setCaixinhas] = useLocalStorage("caixinhas", [])
+  const [cdi, setCdi] = useLocalStorage("cdi", "14.5", { texto: true })
+  const [pctCdi, setPctCdi] = useLocalStorage("pctCdi", "100", { texto: true })
+  const [modoEscuro, setModoEscuro] = useLocalStorage("modoEscuro", false)
 
-    return []
-  })
+  const { aviso, mostrarAviso, fecharAviso } = useAviso()
 
-  const [cdi, setCdi] = useState(() => localStorage.getItem("cdi") || "14.5")
-  const [pctCdi, setPctCdi] = useState(() => localStorage.getItem("pctCdi") || "100")
+  // ===== Firebase: login e sincronização (código original, sem alterações) =====
 
   const [usuario, setUsuario] = useState(null)
   const [verificandoLogin, setVerificandoLogin] = useState(true)
   const [sincronizado, setSincronizado] = useState(false)
   const [erroLogin, setErroLogin] = useState("")
   const ultimoRemoto = useRef("")
-
-  const [descricao, setDescricao] = useState("")
-  const [valor, setValor] = useState("")
-  const [tipo, setTipo] = useState("")
-  const [categoria, setCategoria] = useState("")
-
-  const [transacaoEditando, setTransacaoEditando] = useState(null)
-
-  const [modoEscuro, setModoEscuro] = useState(() => {
-    const temaSalvo = localStorage.getItem("modoEscuro")
-
-    if (temaSalvo) {
-      return JSON.parse(temaSalvo)
-    }
-
-    return false
-  })
-
-  const [transacoes, setTransacoes] = useState(() => {
-    const dadosSalvos = localStorage.getItem("transacoes")
-
-    if (dadosSalvos) {
-      return JSON.parse(dadosSalvos)
-    }
-
-    return[]
-  })
-
-  useEffect(() => {
-    localStorage.setItem("transacoes", JSON.stringify(transacoes))
-  },[transacoes])
-
-  useEffect(() => {
-    localStorage.setItem("caixinhas", JSON.stringify(caixinhas))
-  }, [caixinhas])
-
-  useEffect(() => {
-    localStorage.setItem("cdi", cdi)
-  }, [cdi])
-
-  useEffect(() => {
-    localStorage.setItem("pctCdi", pctCdi)
-  }, [pctCdi])
 
   // Login
 
@@ -220,51 +193,237 @@ function App() {
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
       .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi])
 
-  useEffect(() => {
-    localStorage.setItem("modoEscuro", JSON.stringify(modoEscuro))
-  }, [modoEscuro])
+  // ===== Fim do código do Firebase =====
 
-  // Funções
+  // Valores calculados
 
-  function mostrarAviso(texto, tipo = "info", acao = null) {
-    clearTimeout(avisoTimer.current)
-    setAviso({ id: novoId(), texto, tipo, acao })
-    avisoTimer.current = setTimeout(() => setAviso(null), acao ? 5000 : 3000)
+  const mesesDisponiveis = useMemo(() => listarMeses(transacoes), [transacoes])
+
+  const mesAtivo =
+    mes === "todos" || mesesDisponiveis.includes(mes) ? mes : "todos"
+
+  const transacoesDoMes = useMemo(
+    () => mesAtivo === "todos"
+      ? transacoes
+      : transacoes.filter((t) => chaveMes(t.data) === mesAtivo),
+    [transacoes, mesAtivo]
+  )
+
+  const { saldo, entradas, saidas } = useMemo(
+    () => calcularResumo(transacoesDoMes),
+    [transacoesDoMes]
+  )
+
+  const { gastos, totalGastos } = useMemo(
+    () => gastosPorCategoria(transacoesDoMes),
+    [transacoesDoMes]
+  )
+
+  const transacoesOrdenadas = useMemo(
+    () => ordenar(filtrar(transacoesDoMes, { busca, filtroTipo }), ordenacao),
+    [transacoesDoMes, busca, filtroTipo, ordenacao]
+  )
+
+  const transacoesPorData = useMemo(
+    () => agruparPorData(transacoesOrdenadas),
+    [transacoesOrdenadas]
+  )
+
+  const ultimasTransacoes = useMemo(
+    () => ordenar(transacoesDoMes, "recentes").slice(0, 3),
+    [transacoesDoMes]
+  )
+
+  // Navegação
+
+  function mudarAba(id) {
+    // Saiu da tela de adicionar no meio de uma edição: cancela a edição
+    if (id !== "nova" && editandoId) {
+      setEditandoId(null)
+      setForm(FORM_VAZIO)
+    }
+
+    setAba(id)
   }
 
-  function entrarComGoogle() {
-    setErroLogin("")
+  // Transações
 
-    signInWithPopup(auth, provider).catch((erro) => {
+  function alterarCampo(campo, valor) {
+    setForm((atual) => {
+      const novo = { ...atual, [campo]: valor }
 
+      // Trocou o tipo e a categoria escolhida não combina mais: limpa
       if (
-        erro.code === "auth/popup-closed-by-user" ||
-        erro.code === "auth/cancelled-popup-request"
+        campo === "tipo" &&
+        novo.categoria !== "" &&
+        !categoriaCompativel(novo.categoria, valor)
       ) {
-        return
+        novo.categoria = ""
       }
 
-      if (erro.code === "auth/popup-blocked") {
-        signInWithRedirect(auth, provider)
-        return
-      }
-
-      setErroLogin("Não foi possível entrar. Tente novamente.")
+      return novo
     })
   }
 
-  function sair() {
-    signOut(auth).then(() => {
+  function salvarTransacao() {
 
-      // Limpa a cópia local para ninguém ver seus dados neste aparelho
-      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi"]
-        .forEach((chave) => localStorage.removeItem(chave))
+    const erro = validarTransacao(form)
 
-      window.location.reload()
+    if (erro) {
+      mostrarAviso(erro, "erro")
+      return
+    }
+
+    const valorNumerico = arredondar(Number(form.valor))
+
+    if (editandoId) {
+
+      setTransacoes((atuais) => atuais.map((t) => {
+        if (t.id !== editandoId) {
+          return t
+        }
+
+        return {
+          ...t,
+          descricao: form.descricao.trim(),
+          valor: valorNumerico,
+          tipo: form.tipo,
+          categoria: form.categoria,
+          data: dataParaIso(form.data, t.data)
+        }
+      }))
+
+      setEditandoId(null)
+      mostrarAviso("Transação atualizada")
+
+    } else {
+
+      setTransacoes((atuais) => [
+        ...atuais,
+        {
+          id: novoId(),
+          descricao: form.descricao.trim(),
+          valor: valorNumerico,
+          tipo: form.tipo,
+          categoria: form.categoria,
+          data: dataParaIso(form.data)
+        }
+      ])
+
+      mostrarAviso("Transação adicionada")
+    }
+
+    setForm(FORM_VAZIO)
+  }
+
+  function iniciarEdicao(id) {
+
+    const transacao = transacoes.find((t) => t.id === id)
+
+    if (!transacao) {
+      return
+    }
+
+    setForm({
+      descricao: transacao.descricao,
+      valor: String(transacao.valor),
+      tipo: transacao.tipo,
+      // Transação antiga com categoria que não combina com o tipo: pede de novo
+      categoria: categoriaCompativel(transacao.categoria, transacao.tipo)
+        ? transacao.categoria
+        : "",
+      data: paraInputData(transacao.data)
+    })
+
+    setEditandoId(id)
+    setAba("nova")
+  }
+
+  function cancelarEdicao() {
+    setEditandoId(null)
+    setForm(FORM_VAZIO)
+  }
+
+  function excluirTransacao(id) {
+
+    const indice = transacoes.findIndex((t) => t.id === id)
+
+    if (indice === -1) {
+      return
+    }
+
+    const removida = transacoes[indice]
+
+    setTransacoes((atuais) => atuais.filter((t) => t.id !== id))
+
+    mostrarAviso("Transação excluída", "info", () => {
+      setTransacoes((atuais) => {
+        if (atuais.some((t) => t.id === removida.id)) {
+          return atuais
+        }
+
+        const copia = [...atuais]
+        copia.splice(Math.min(indice, copia.length), 0, removida)
+        return copia
+      })
+
+      fecharAviso()
     })
   }
+
+  function exportarCSV() {
+    baixarCSV(transacoesOrdenadas, `transacoes-${mesAtivo}.csv`)
+    mostrarAviso("Arquivo exportado")
+  }
+
+  // Backup
+
+  function exportarBackup() {
+    baixarBackup({ transacoes, caixinhas, cdi, pctCdi })
+    mostrarAviso("Backup exportado")
+  }
+
+  async function importarBackup(arquivo) {
+
+    try {
+      const backup = await lerBackup(arquivo)
+
+      const idsTransacoes = new Set(transacoes.map((t) => t.id))
+      const idsCaixinhas = new Set(caixinhas.map((c) => c.id))
+
+      const novasTransacoes = backup.transacoes
+        .filter((t) => !idsTransacoes.has(t.id)).length
+
+      const novasCaixinhas = backup.caixinhas
+        .filter((c) => !idsCaixinhas.has(c.id)).length
+
+      if (novasTransacoes === 0 && novasCaixinhas === 0) {
+        mostrarAviso("Nada novo no backup: seus dados já estão aqui")
+        return
+      }
+
+      // Só entra o que falta; o que já existe fica como está
+      setTransacoes((atuais) => unirPorId(atuais, backup.transacoes))
+      setCaixinhas((atuais) => unirPorId(atuais, backup.caixinhas))
+
+      mostrarAviso(
+        "Backup importado: " +
+        contar(novasTransacoes, "transação", "transações") + " e " +
+        contar(novasCaixinhas, "caixinha", "caixinhas")
+      )
+
+    } catch (erro) {
+      mostrarAviso(
+        erro instanceof Error ? erro.message : "Não foi possível importar o backup",
+        "erro"
+      )
+    }
+  }
+
+  // Caixinhas
 
   function criarCaixinha({ nome, emoji, metaValor, metaData }) {
 
@@ -275,7 +434,7 @@ function App() {
 
     const temMeta = metaValor !== ""
 
-    if (temMeta && (Number(metaValor) <= 0 || metaData === "")) {
+    if (temMeta && (!(Number(metaValor) > 0) || metaData === "")) {
       mostrarAviso("Informe o valor e a data da meta", "erro")
       return false
     }
@@ -309,6 +468,8 @@ function App() {
       return
     }
 
+    valorMov = arredondar(valorMov)
+
     if (tipoMov === "retirar" && valorMov > caixinha.saldo) {
       mostrarAviso("Saldo insuficiente na caixinha", "erro")
       return
@@ -324,7 +485,7 @@ function App() {
 
       return {
         ...c,
-        saldo: guardando ? c.saldo + valorMov : c.saldo - valorMov,
+        saldo: arredondar(guardando ? c.saldo + valorMov : c.saldo - valorMov),
         historico: [
           { id: novoId(), tipo: tipoMov, valor: valorMov, data },
           ...c.historico
@@ -350,17 +511,17 @@ function App() {
 
   function excluirCaixinha(id) {
 
-    const caixinha = caixinhas.find((c) => c.id === id)
+    const indice = caixinhas.findIndex((c) => c.id === id)
 
-    if (!caixinha) {
+    if (indice === -1) {
       return
     }
 
+    const caixinha = caixinhas[indice]
+
     // O que estava guardado volta para o saldo principal
-    if (caixinha.saldo > 0) {
-      setTransacoes((atuais) => [
-        ...atuais,
-        {
+    const resgate = caixinha.saldo > 0
+      ? {
           id: novoId(),
           descricao: `Resgate de ${caixinha.nome}`,
           valor: caixinha.saldo,
@@ -368,393 +529,98 @@ function App() {
           categoria: "caixinha",
           data: new Date().toISOString()
         }
-      ])
+      : null
+
+    if (resgate) {
+      setTransacoes((atuais) => [...atuais, resgate])
     }
 
     setCaixinhas((atuais) => atuais.filter((c) => c.id !== id))
 
     mostrarAviso(
-      caixinha.saldo > 0
+      resgate
         ? "Caixinha excluída e valor devolvido ao saldo"
-        : "Caixinha excluída"
-    )
-  }
-
-  function adicionarTransacao() {
-
-    if (descricao.trim() === "") {
-      mostrarAviso("Adicione uma Descrição!", "erro")
-      return
-    }
-
-    if (valor === "") {
-      mostrarAviso("Adicione um valor!", "erro")
-      return
-    }
-
-    if (tipo === "") {
-      mostrarAviso("Adicione um tipo", "erro")
-      return
-    }
-
-    if (categoria === "") {
-      mostrarAviso("Selecione uma categoria", "erro")
-      return
-    }
-
-    const valorNumerico = Number(valor)
-
-    if (valorNumerico <= 0) {
-      mostrarAviso("Adicione um valor válido", "erro")
-      return
-    }
-
-    setTransacoes([
-      ...transacoes,
-      {
-        id: novoId(),
-        descricao: descricao.trim(),
-        valor: valorNumerico,
-        tipo,
-        categoria,
-        data: new Date().toISOString()
-      }
-    ])
-
-    setDescricao("")
-    setValor("")
-    setTipo("")
-    setCategoria("")
-    mostrarAviso("Transação adicionada")
-  }
-
-  function editarTransacao(id) {
-
-    const transacao = transacoes.find((transacao) => {
-      return transacao.id === id
-    })
-
-    setDescricao(transacao.descricao)
-    setValor(transacao.valor)
-    setCategoria(transacao.categoria)
-    setTipo(transacao.tipo)
-    setTransacaoEditando(id)
-  }
-
-  function salvarFormulario() {
-
-    if (transacaoEditando) {
-
-      // Validações
-
-      if (descricao.trim() === "") {
-        mostrarAviso("Adicione uma Descrição!", "erro")
-        return
-      }
-
-      if (valor === "") {
-        mostrarAviso("Adicione um valor!", "erro")
-        return
-      }
-
-      const novoValor = Number(valor)
-
-      if (novoValor <= 0) {
-        mostrarAviso("Adicione um valor válido", "erro")
-        return
-      }
-
-      if (tipo === "") {
-        mostrarAviso("Adicione um tipo", "erro")
-        return
-      }
-
-      if (categoria === "") {
-        mostrarAviso("Selecione uma categoria", "erro")
-        return
-      }
-
-      // Atualiza a transação
-
-      const novasTransacoes = transacoes.map((transacao) => {
-
-        if (transacao.id === transacaoEditando) {
-
-          return {
-            ...transacao,
-            descricao: descricao.trim(),
-            valor: novoValor,        
-            tipo: tipo,
-            categoria: categoria
+        : "Caixinha excluída",
+      "info",
+      () => {
+        // Desfazer: a caixinha volta e o resgate some
+        setCaixinhas((atuais) => {
+          if (atuais.some((c) => c.id === caixinha.id)) {
+            return atuais
           }
 
+          const copia = [...atuais]
+          copia.splice(Math.min(indice, copia.length), 0, caixinha)
+          return copia
+        })
+
+        if (resgate) {
+          setTransacoes((atuais) => atuais.filter((t) => t.id !== resgate.id))
         }
 
-        return transacao
-      })
-
-      setTransacoes(novasTransacoes)
-
-      // Sai do modo de edição
-
-      setTransacaoEditando(null)
-      mostrarAviso("Transação atualizada")
-      setDescricao("")
-      setValor("")
-      setCategoria("")
-      setTipo("")
-
-    } else {
-
-      adicionarTransacao()
-
-    }
+        fecharAviso()
+      }
+    )
   }
 
-  function excluirTransacao(id) {
+  // Firebase: entrar e sair (código original, sem alterações)
 
-    const indice = transacoes.findIndex((transacao) => transacao.id === id)
-    const removida = transacoes[indice]
+  function entrarComGoogle() {
+    setErroLogin("")
 
-    setTransacoes(transacoes.filter((transacao) => transacao.id !== id))
+    signInWithPopup(auth, provider).catch((erro) => {
 
-    mostrarAviso("Transação excluída", "info", () => {
-      setTransacoes((atuais) => {
-        const copia = [...atuais]
-        copia.splice(Math.min(indice, copia.length), 0, removida)
-        return copia
-      })
-      setAviso(null)
+      if (
+        erro.code === "auth/popup-closed-by-user" ||
+        erro.code === "auth/cancelled-popup-request"
+      ) {
+        return
+      }
+
+      if (erro.code === "auth/popup-blocked") {
+        signInWithRedirect(auth, provider)
+        return
+      }
+
+      setErroLogin("Não foi possível entrar. Tente novamente.")
     })
   }
 
-  function exportarCSV() {
+  function sair() {
+    signOut(auth).then(() => {
 
-    const cabecalho = ["Data", "Descrição", "Tipo", "Categoria", "Valor"]
+      // Limpa a cópia local para ninguém ver seus dados neste aparelho
+      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi"]
+        .forEach((chave) => localStorage.removeItem(chave))
 
-    const linhas = transacoesOrdenadas.map((transacao) => [
-      new Date(transacao.data).toLocaleDateString("pt-BR"),
-      `"${transacao.descricao.replace(/"/g, '""')}"`,
-      transacao.tipo === "entrada" ? "Entrada" : "Saída",
-      transacao.categoria || "",
-      transacao.valor.toFixed(2).replace(".", ",")
-    ])
-
-    const csv = "\ufeff" + [cabecalho, ...linhas]
-      .map((linha) => linha.join(";"))
-      .join("\n")
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-
-    link.href = url
-    link.download = "transacoes.csv"
-    link.click()
-
-    URL.revokeObjectURL(url)
-    mostrarAviso("Arquivo exportado")
+      window.location.reload()
+    })
   }
 
-  // Filtra as transações pela busca
+  // Telas de espera (login, sincronização)
 
-  function formatarData(data) {
-
-    const dataTransacao = new Date(data)
-    const hoje = new Date()
-
-    const mesmaData =
-      dataTransacao.getDate() === hoje.getDate() &&
-      dataTransacao.getMonth() === hoje.getMonth() &&
-      dataTransacao.getFullYear() === hoje.getFullYear()
-
-    if (mesmaData) {
-      return "HOJE"
-    }
-
-    const ontem = new Date()
-    ontem.setDate(hoje.getDate() - 1)
-
-    const foiOntem =
-      dataTransacao.getDate() === ontem.getDate() &&
-      dataTransacao.getMonth() === ontem.getMonth() &&
-      dataTransacao.getFullYear() === ontem.getFullYear()
-
-    if (foiOntem) {
-      return "ONTEM"
-    }
-
-    return dataTransacao.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric"
-    }).toUpperCase()
+  if (verificandoLogin) {
+    return <TelaCarregando etapa={0} modoEscuro={modoEscuro} />
   }
 
-  const mesesDisponiveis = [...new Set(transacoes.map((t) => chaveMes(t.data)))]
-    .sort()
-    .reverse()
-
-  const mesAtivo =
-    mes === "todos" || mesesDisponiveis.includes(mes) ? mes : "todos"
-
-  const transacoesDoMes = mesAtivo === "todos"
-    ? transacoes
-    : transacoes.filter((t) => chaveMes(t.data) === mesAtivo)
-
-  const entradas = transacoesDoMes
-    .filter((t) => t.tipo === "entrada" && t.categoria !== "caixinha")
-    .reduce((total, t) => total + t.valor, 0)
-
-  const saidas = transacoesDoMes
-    .filter((t) => t.tipo === "saida" && t.categoria !== "caixinha")
-    .reduce((total, t) => total + t.valor, 0)
-
-  const guardadoNasCaixinhas = transacoesDoMes
-    .filter((t) => t.categoria === "caixinha")
-    .reduce((total, t) => total + (t.tipo === "saida" ? t.valor : -t.valor), 0)
-
-  const saldo = entradas - saidas - guardadoNasCaixinhas
-
-  const transacoesFiltradas = transacoesDoMes.filter((transacao) => {
-    return (
-      transacao.descricao
-        .toLowerCase()
-        .includes(busca.toLowerCase().trim())
-      &&
-      (filtroTipo === "todos" || transacao.tipo === filtroTipo)
-    )
-  })
-
-  const transacoesOrdenadas = [...transacoesFiltradas].sort((a,b) => {
-
-    if (ordenacao === "recentes") {
-      return b.id - a.id
-    }
-
-    if (ordenacao === "antigas") {
-      return a.id - b.id
-    }
-
-    if (ordenacao === "maiorValor") {
-      return b.valor - a.valor
-    }
-
-    if (ordenacao === "menorValor") {
-      return a.valor - b.valor
-    }
-
-    return 0
-  })
-  
-  const transacoesPorData = transacoesOrdenadas.reduce((grupos, transacao) => {
-    const data = formatarData(transacao.data)
-    
-    if (!grupos[data]) {
-      grupos[data] = []
-    }
-
-    grupos[data].push(transacao)
-
-    return grupos
-  }, {})
-  
-  const gastosPorCategoria = transacoesDoMes.reduce((grupos, transacao) => {
-    if (transacao.tipo === "saida" && transacao.categoria !== "caixinha") {
-      if (!grupos[transacao.categoria]) {
-        grupos[transacao.categoria] = 0
-      }
-
-      grupos[transacao.categoria] += transacao.valor
-    }
-
-    return grupos
-  }, {})
-
-  const totalGastos = Object.values(gastosPorCategoria).reduce(
-    (total, valor) => total + valor,
-    0
-  )
-
-  // Navegação
-
-  const abas = [
-    { id: "inicio", icone: "📊", nome: "Início" },
-    { id: "transacoes", icone: "💳", nome: "Transações" },
-    { id: "graficos", icone: "📈", nome: "Gráficos" },
-    { id: "caixinhas", icone: "🐷", nome: "Caixinhas" },
-    { id: "nova", icone: "➕", nome: "Adicionar" }
-  ]
-
-  const ultimasTransacoes = [...transacoesDoMes]
-    .sort((a, b) => b.id - a.id)
-    .slice(0, 3)
-
-  const abaAtual = abas.find((item) => item.id === aba)
-
-  function iniciarEdicao(id) {
-    editarTransacao(id)
-    setAba("nova")
+  if (!usuario) {
+    return <Login onEntrar={entrarComGoogle} erro={erroLogin} modoEscuro={modoEscuro} />
   }
+
+  if (!sincronizado) {
+    return <TelaCarregando etapa={1} modoEscuro={modoEscuro} />
+  }
+
+  // O que aparece na tela
 
   const classesApp = ["app", modoEscuro && "modo-escuro", privado && "privado"]
     .filter(Boolean)
     .join(" ")
 
-  if (verificandoLogin) {
-    return <div className="tela-carregando">Carregando...</div>
-  }
-
-  if (!usuario) {
-    return <Login onEntrar={entrarComGoogle} erro={erroLogin} />
-  }
-
-  if (!sincronizado) {
-    return <div className="tela-carregando">Sincronizando seus dados...</div>
-  }
-
-  // O que aparece na tela
-
   return (
     <div className={classesApp}>
 
-      <aside className={menuAberto ? "sidebar aberto" : "sidebar"}>
-
-        <div
-          className="menu-fundo"
-          onClick={() => setMenuAberto(false)}
-        />
-
-        <button
-          className="menu-toggle"
-          onClick={() => setMenuAberto(!menuAberto)}
-          aria-expanded={menuAberto}
-          aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
-        >
-          <span className="sidebar-icone" key={aba}>{abaAtual.icone}</span>
-          <span className="menu-seta">⌄</span>
-        </button>
-
-        <nav className="menu-lista">
-          <div className="menu-lista-interno">
-            {abas.map((item) => (
-              <button
-                key={item.id}
-                className={aba === item.id ? "sidebar-item ativo" : "sidebar-item"}
-                onClick={() => {
-                  setAba(item.id)
-                  setMenuAberto(false)
-                }}
-                aria-current={aba === item.id ? "page" : undefined}
-              >
-                <span className="sidebar-icone">{item.icone}</span>
-                <span className="sidebar-nome">{item.nome}</span>
-              </button>
-            ))}
-          </div>
-        </nav>
-
-      </aside>
+      <Sidebar abas={ABAS} aba={aba} onMudar={mudarAba} />
 
       <main className="conteudo">
 
@@ -814,7 +680,7 @@ function App() {
                 <h2 className="titulo-secao">Últimas transações</h2>
                 <button
                   className="link-ver-todas"
-                  onClick={() => setAba("transacoes")}
+                  onClick={() => mudarAba("transacoes")}
                 >
                   Ver todas →
                 </button>
@@ -826,17 +692,11 @@ function App() {
                 )}
 
                 {ultimasTransacoes.map((transacao) => (
-                  <div className="transacao" key={transacao.id}>
-                    <Transacao
-                      descricao={transacao.descricao}
-                      valor={transacao.valor}
-                      tipo={transacao.tipo}
-                      categoria={transacao.categoria}
-                      data={transacao.data}
-                    />
-                  </div>
+                  <Transacao key={transacao.id} transacao={transacao} />
                 ))}
               </div>
+
+              <Backup onExportar={exportarBackup} onImportar={importarBackup} />
             </>
           )}
 
@@ -846,11 +706,13 @@ function App() {
                 <input
                   type="text"
                   placeholder="Pesquisar transação"
+                  aria-label="Pesquisar transação"
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
                 />
 
                 <select
+                  aria-label="Filtrar por tipo"
                   value={filtroTipo}
                   onChange={(e) => setFiltroTipo(e.target.value)}>
                   <option value="todos">Todos</option>
@@ -859,6 +721,7 @@ function App() {
                 </select>
 
                 <select
+                  aria-label="Ordenar"
                   value={ordenacao}
                   onChange={(e) => setOrdenacao(e.target.value)}>
                   <option value="recentes">Mais recentes</option>
@@ -871,51 +734,26 @@ function App() {
                   Exportar CSV
                 </button>
               </div>
-            
+
               <div className="transacoes">
                 {transacoesOrdenadas.length === 0 && (
                   <p className="vazio">Nenhuma transação encontrada.</p>
                 )}
 
-                {Object.entries(transacoesPorData).map(([data, transacoes]) => (
+                {transacoesPorData.map(([data, grupo]) => (
                   <div className="grupo-data" key={data}>
 
                     <h3 className="titulo-data">
                       {data}
                     </h3>
 
-                    {transacoes.map((transacao) => (
-                      <div className="transacao" key={transacao.id}>
-
-                        <Transacao
-                          descricao={transacao.descricao}
-                          valor={transacao.valor}
-                          tipo={transacao.tipo}
-                          categoria={transacao.categoria}
-                          data={transacao.data}
-                        />
-
-                        {transacao.categoria !== "caixinha" && (
-                        <div className="acoes">
-
-                          <button
-                            className="btn-editar"
-                            onClick={() => iniciarEdicao(transacao.id)}
-                          >
-                            Editar
-                          </button>
-
-                          <button
-                            className="btn-excluir"
-                            onClick={() => excluirTransacao(transacao.id)}
-                          >
-                            Excluir
-                          </button>
-
-                        </div>
-                        )}
-
-                      </div>
+                    {grupo.map((transacao) => (
+                      <Transacao
+                        key={transacao.id}
+                        transacao={transacao}
+                        onEditar={iniciarEdicao}
+                        onExcluir={excluirTransacao}
+                      />
                     ))}
                   </div>
                 ))}
@@ -928,7 +766,7 @@ function App() {
               <h2 className="titulo-secao">Gastos por categoria</h2>
 
               <Categorias
-                gastosPorCategoria={gastosPorCategoria}
+                gastosPorCategoria={gastos}
                 totalGastos={totalGastos}
               />
             </>
@@ -952,77 +790,13 @@ function App() {
           )}
 
           {aba === "nova" && (
-            <>
-              <h2 className="titulo-secao">
-                {transacaoEditando ? "Editar transação" : "Nova transação"}
-              </h2>
-
-              <div className="formulario">
-
-                <div className="campo-descricao">
-                  <input
-                    type="text"
-                    placeholder="Descrição"
-                    value={descricao}
-                    maxLength={LIMITE_DESCRICAO}
-                    onChange={(e) =>
-                      setDescricao(e.target.value.slice(0, LIMITE_DESCRICAO))
-                    }
-                  />
-
-                  <span
-                    className={
-                      descricao.length >= LIMITE_DESCRICAO
-                        ? "contador cheio"
-                        : "contador"
-                    }
-                  >
-                    {descricao.length}/{LIMITE_DESCRICAO}
-                  </span>
-                </div>
-
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  placeholder="Valor"
-                  value={valor}
-                  onChange={(e) => setValor(e.target.value)}
-                />
-
-                <select
-                  value={tipo}
-                  onChange={(event) => setTipo(event.target.value)}
-                >
-                  <option value="">Selecione o tipo</option>
-                  <option value="entrada">Entrada</option>
-                  <option value="saida">Saída</option>
-                </select>
-
-                <select
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                >
-                  <option value="">Selecione a Categoria</option>
-                  <option value="alimentacao">🍔 Alimentação</option>
-                  <option value="lazer">🎮 Lazer</option>
-                  <option value="casa">🏠 Casa</option>
-                  <option value="transporte">🚗 Transporte</option>
-                  <option value="salario">💰 Salario</option>
-                  <option value="educacao">📚 Educação</option>
-                  <option value="compras">🛒 Compras</option>
-                  <option value="outros">📦 Outros</option>
-                </select>
-
-                <button onClick={salvarFormulario}>
-                  {transacaoEditando
-                    ? "Salvar Alteração"
-                    : "Adicionar Transação"}
-                </button>
-
-              </div>
-            </>
+            <FormularioTransacao
+              form={form}
+              editando={editandoId !== null}
+              onAlterar={alterarCampo}
+              onSalvar={salvarTransacao}
+              onCancelar={cancelarEdicao}
+            />
           )}
 
         </div>

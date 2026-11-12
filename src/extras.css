@@ -143,3 +143,87 @@
     transition-delay: 0.16s, 0.16s, 0.16s, 0s, 0s;
   }
 }
+
+/* ========================= */
+/* FORMULÁRIO: DATA + CANCELAR */
+/* ========================= */
+
+/* Com o campo de data são mais itens: deixa quebrar em mais de uma linha */
+
+.formulario {
+  flex-wrap: wrap;
+}
+
+.formulario input[type="number"],
+.formulario input[type="date"],
+.formulario select {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.formulario .btn-cancelar {
+  border: 1px solid var(--border);
+  background-color: transparent;
+  color: var(--text-muted);
+}
+
+.formulario .btn-cancelar:hover {
+  border-color: var(--saida);
+  background-color: transparent;
+  color: var(--saida);
+}
+
+@media (max-width: 700px) {
+  .formulario input[type="number"],
+  .formulario input[type="date"],
+  .formulario select {
+    flex: none;
+  }
+}
+
+/* ========================= */
+/* BACKUP                    */
+/* ========================= */
+
+.backup {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 32px;
+  padding: 18px 20px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.backup-texto h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.backup-texto p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.backup-acoes {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+@media (max-width: 700px) {
+  .backup {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .backup-acoes {
+    flex-direction: column;
+  }
+}

@@ -143,71 +143,13 @@
   animation: carregando-giro 0.8s linear infinite;
 }
 
-/* Mensagens */
+/* Mensagem de baixo */
 
-.carregando-dica,
-.carregando-erro {
+.carregando-dica {
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
-}
-
-.carregando-dica {
   color: var(--text-muted);
-}
-
-.carregando-erro {
-  color: var(--saida);
-  font-weight: 600;
-}
-
-.tela-carregando.com-erro .carregando-icone {
-  animation: none;
-}
-
-.tela-carregando.com-erro .carregando-progresso::after {
-  animation: none;
-  opacity: 0;
-}
-
-.tela-carregando.com-erro .carregando-etapas li.atual .carregando-marca {
-  animation: none;
-  border-color: var(--saida);
-}
-
-.carregando-acoes {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-}
-
-.carregando-botao {
-  flex: 1;
-  padding: 11px 16px;
-  border: none;
-  border-radius: var(--radius-md);
-  background-color: var(--brand);
-  color: var(--on-brand);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.carregando-botao:hover {
-  background-color: var(--brand-hover);
-}
-
-.carregando-botao.secundario {
-  border: 1px solid var(--border);
-  background-color: transparent;
-  color: var(--text-muted);
-}
-
-.carregando-botao.secundario:hover {
-  border-color: var(--saida);
-  background-color: transparent;
-  color: var(--saida);
 }
 
 /* Animações */

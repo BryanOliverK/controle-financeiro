@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { brl, hojeLocal } from "../utils/formatar"
 
 const EMOJIS = ["🐷", "💰", "✈️", "🏠", "🚗", "🎓", "🛡️", "🎁"]
 const DIAS_UTEIS_MES = 21
@@ -6,10 +7,6 @@ const DIAS_UTEIS_MES = 21
 // Fica fora do componente para o React não reclamar de função "impura" no render
 function agora() {
   return new Date()
-}
-
-function brl(valor) {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
 // IR regressivo da renda fixa
@@ -162,6 +159,7 @@ function CaixinhaCard({ caixinha, taxaAnual, onMovimentar, onExcluir }) {
           min="0"
           step="0.01"
           placeholder="Valor"
+          aria-label={`Valor para guardar ou retirar de ${caixinha.nome}`}
           value={valorMov}
           onChange={(e) => setValorMov(e.target.value)}
         />
@@ -244,6 +242,7 @@ function Caixinhas({
               key={e}
               className={e === emoji ? "cx-emoji-btn ativo" : "cx-emoji-btn"}
               onClick={() => setEmoji(e)}
+              aria-pressed={e === emoji}
             >
               {e}
             </button>
@@ -254,6 +253,7 @@ function Caixinhas({
           <input
             type="text"
             placeholder="Nome (ex: Viagem)"
+            aria-label="Nome da caixinha"
             maxLength={30}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
@@ -263,11 +263,14 @@ function Caixinhas({
             inputMode="decimal"
             min="0"
             placeholder="Meta em R$ (opcional)"
+            aria-label="Valor da meta"
             value={metaValor}
             onChange={(e) => setMetaValor(e.target.value)}
           />
           <input
             type="date"
+            min={hojeLocal()}
+            aria-label="Data da meta"
             value={metaData}
             onChange={(e) => setMetaData(e.target.value)}
           />

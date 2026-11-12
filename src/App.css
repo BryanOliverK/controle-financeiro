@@ -57,15 +57,15 @@
 /* ========================= */
 
 html {
-  background-color: #f2f4f3;
+  background-color: var(--bg);
 }
 
 body {
   margin: 0;
   font-family: var(--font);
-  background-color: #f2f4f3;
+  background-color: var(--bg);
   min-height: 100vh;
-  color: #16211e;
+  color: var(--text);
   position: relative;
   -webkit-font-smoothing: antialiased;
 }
@@ -231,12 +231,6 @@ select:focus-visible {
 
 .btn-tema:active .btn-tema-bolinha {
   width: 30px;
-}
-
-@media (max-width: 700px) {
-  .header h1 {
-    font-size: 22px;
-  }
 }
 
 /* ========================= */
@@ -473,6 +467,10 @@ select:focus-visible {
 /* ========================= */
 
 @media (max-width: 700px) {
+  .header h1 {
+    font-size: 22px;
+  }
+
   .conteudo {
     padding: 20px 16px 104px;
   }
@@ -490,12 +488,6 @@ select:focus-visible {
   .transacao {
     flex-direction: column;
     align-items: flex-start;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
   }
 }
 
@@ -735,7 +727,7 @@ select:focus-visible {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
-} 
+}
 
 /* ========================= */
 /* AÇÕES DO TOPO / PRIVACIDADE */
@@ -743,6 +735,7 @@ select:focus-visible {
 
 .header-acoes {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 12px;
 }
@@ -756,12 +749,14 @@ select:focus-visible {
   border: 1px solid var(--border);
   border-radius: 50%;
   background-color: var(--surface);
+  color: var(--text-muted);
   font-size: 15px;
   cursor: pointer;
 }
 
 .btn-olho:hover {
   border-color: var(--brand);
+  color: var(--brand);
 }
 
 /* Valores borrados no modo privado */
@@ -832,17 +827,12 @@ select:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aba {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
   }
-}
-
-.btn-olho {
-  color: var(--text-muted);
-}
-
-.btn-olho:hover {
-  color: var(--brand);
 }
 
 .grupo-data {
@@ -853,7 +843,7 @@ select:focus-visible {
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 10px;
-  color: #777;
+  color: var(--text-muted);
   letter-spacing: 0.5px;
 }
 

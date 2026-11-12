@@ -1,30 +1,29 @@
-const nomesCategorias = {
-    alimentacao: "🍔 Alimentação",
-    lazer: "🎮 Lazer",
-    casa: "🏠 Casa",
-    transporte: "🚗 Transporte",
-    salario: "💰 Salário",
-    educacao: "📚 Educação",
-    compras: "🛒 Compras",
-    outros: "📦 Outros",
-    caixinha: "🐷 Caixinha"
-}
+import { nomeCategoria } from "../utils/categorias"
+import { brl } from "../utils/formatar"
 
-function Transacao({descricao, valor, tipo, categoria, data}) {
+// Uma linha da lista. Se receber onEditar/onExcluir, mostra os botões
+// (transações de caixinha não podem ser editadas aqui).
+function Transacao({ transacao, onEditar, onExcluir }) {
+
+    const { id, descricao, valor, tipo, categoria, data } = transacao
+
+    const dataTransacao = new Date(data)
+    const mostrarAcoes = categoria !== "caixinha" && (onEditar || onExcluir)
+
     return (
-        <div className="info-transacao">   
+        <div className="transacao">
+
+            <div className="info-transacao">
                 <h3>{descricao}</h3>
 
                 {categoria && (
                     <span className="categoria">
-                        {nomesCategorias[categoria] || categoria}
+                        {nomeCategoria(categoria)}
                     </span>
                 )}
 
                 <p>
-                    {tipo === "entrada" ? "+" : "-"}R$ {valor.toLocaleString("pt-BR",{
-                        minimumFractionDigits: 2
-                    })}
+                    {tipo === "entrada" ? "+" : "-"}{brl(valor)}
                 </p>
 
                 <span className={tipo === "entrada" ? "entrada-texto": "saida-texto"}>
@@ -32,17 +31,37 @@ function Transacao({descricao, valor, tipo, categoria, data}) {
                 </span>
 
                 <p className="data-transacao">
-                    {new Date(data).toLocaleDateString("pt-BR", {
+                    {dataTransacao.toLocaleDateString("pt-BR", {
                         day: "2-digit",
                         month: "long",
                         year: "numeric"
                     })}
                     {" · "}
-                    {new Date(data).toLocaleTimeString("pt-BR", {
+                    {dataTransacao.toLocaleTimeString("pt-BR", {
                         hour: "2-digit",
                         minute: "2-digit"
                     })}
                 </p>
+            </div>
+
+            {mostrarAcoes && (
+                <div className="acoes">
+
+                    {onEditar && (
+                        <button className="btn-editar" onClick={() => onEditar(id)}>
+                            Editar
+                        </button>
+                    )}
+
+                    {onExcluir && (
+                        <button className="btn-excluir" onClick={() => onExcluir(id)}>
+                            Excluir
+                        </button>
+                    )}
+
+                </div>
+            )}
+
         </div>
     )
 }

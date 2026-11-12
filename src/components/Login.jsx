@@ -1,6 +1,6 @@
-function Login({ onEntrar, erro }) {
+function Login({ onEntrar, erro, modoEscuro }) {
   return (
-    <div className="tela-login">
+    <div className={modoEscuro ? "tela-login modo-escuro" : "tela-login"}>
       <div className="login-card">
 
         <span className="login-icone">💰</span>

@@ -1,31 +1,25 @@
-function Resumo({saldo, entradas, saidas}) {
-   
-    return(
+import { brl } from "../utils/formatar"
+
+function Resumo({ saldo, entradas, saidas }) {
+
+    return (
         <div className="resumo">
 
             <div className="card saldo">
                 <h3>Saldo</h3>
-                <p>R$ {saldo.toLocaleString("pt-BR", {
-                    minimumFractionDigits: 2
-                })}
-                </p>
+                <p>{brl(saldo)}</p>
             </div>
 
             <div className="card entrada">
                 <h3>Entradas</h3>
-                <p>R$ {entradas.toLocaleString("pt-BR",{
-                    minimumFractionDigits: 2
-                })}
-                </p>
+                <p>{brl(entradas)}</p>
             </div>
 
             <div className="card saida">
-                <h3>Saídas</h3>  
-                <p>R$ {saidas.toLocaleString("pt-BR",{
-                    minimumFractionDigits: 2
-                })}
-                </p>
+                <h3>Saídas</h3>
+                <p>{brl(saidas)}</p>
             </div>
+
         </div>
     )
 }
