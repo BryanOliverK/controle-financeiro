@@ -220,7 +220,6 @@ function App() {
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
       .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi])
 
   useEffect(() => {

@@ -1,0 +1,246 @@
+/* ========================= */
+/* TELA DE CARREGAMENTO      */
+/* ========================= */
+
+.tela-carregando {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: var(--font);
+  color: var(--text);
+}
+
+.carregando-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 380px;
+  padding: 36px 28px 30px;
+  text-align: center;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  animation: entrar-aba 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.carregando-icone {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background-color: var(--brand-soft);
+  font-size: 32px;
+  animation: carregando-pulso 1.8s ease-in-out infinite;
+}
+
+.carregando-card h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Barra de progresso */
+
+.carregando-barra {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--border);
+  overflow: hidden;
+}
+
+.carregando-progresso {
+  position: relative;
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--brand);
+  overflow: hidden;
+  transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Brilho que corre pela barra: mostra que o app está vivo */
+
+.carregando-progresso::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: carregando-brilho 1.4s ease-in-out infinite;
+}
+
+/* Etapas */
+
+.carregando-etapas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.carregando-etapas li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.carregando-etapas li.feita,
+.carregando-etapas li.atual {
+  opacity: 1;
+}
+
+.carregando-etapas li.atual {
+  color: var(--text);
+}
+
+.carregando-marca {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.carregando-etapas li.feita .carregando-marca {
+  border-color: var(--entrada);
+  background-color: var(--entrada);
+  color: var(--on-brand);
+}
+
+/* Etapa em andamento: anel girando */
+
+.carregando-etapas li.atual .carregando-marca {
+  border-color: var(--brand-soft);
+  border-top-color: var(--brand);
+  animation: carregando-giro 0.8s linear infinite;
+}
+
+/* Mensagens */
+
+.carregando-dica,
+.carregando-erro {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.carregando-dica {
+  color: var(--text-muted);
+}
+
+.carregando-erro {
+  color: var(--saida);
+  font-weight: 600;
+}
+
+.tela-carregando.com-erro .carregando-icone {
+  animation: none;
+}
+
+.tela-carregando.com-erro .carregando-progresso::after {
+  animation: none;
+  opacity: 0;
+}
+
+.tela-carregando.com-erro .carregando-etapas li.atual .carregando-marca {
+  animation: none;
+  border-color: var(--saida);
+}
+
+.carregando-acoes {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.carregando-botao {
+  flex: 1;
+  padding: 11px 16px;
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: var(--brand);
+  color: var(--on-brand);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.carregando-botao:hover {
+  background-color: var(--brand-hover);
+}
+
+.carregando-botao.secundario {
+  border: 1px solid var(--border);
+  background-color: transparent;
+  color: var(--text-muted);
+}
+
+.carregando-botao.secundario:hover {
+  border-color: var(--saida);
+  background-color: transparent;
+  color: var(--saida);
+}
+
+/* Animações */
+
+@keyframes carregando-pulso {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes carregando-brilho {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes carregando-giro {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carregando-icone,
+  .carregando-progresso::after,
+  .carregando-etapas li.atual .carregando-marca {
+    animation: none;
+  }
+
+  .carregando-progresso {
+    transition: none;
+  }
+}
