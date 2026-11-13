@@ -21,6 +21,7 @@
   --saida: #d1432f;
 
   --hero-bg: #12342d;
+  --hero-bg-2: #0e5a4b;
   --hero-text: #ffffff;
   --hero-muted: rgba(255, 255, 255, 0.7);
 
@@ -49,6 +50,7 @@
   --saida: #f2735f;
 
   --hero-bg: #0f3a31;
+  --hero-bg-2: #155c4d;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
@@ -94,11 +96,26 @@ body:has(.modo-escuro)::before {
 
 /* Valores monetários alinhados em coluna */
 
-.card p,
-.info-transacao p,
-.info-transacao .entrada-texto,
-.info-transacao .saida-texto {
+.card p {
   font-variant-numeric: tabular-nums;
+}
+
+/* Ícones nunca encolhem dentro de botões flex */
+
+.icone {
+  flex-shrink: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Foco visível para teclado */
@@ -163,8 +180,9 @@ select:focus-visible {
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  background-color: var(--brand-soft);
-  font-size: 26px;
+  background: linear-gradient(135deg, var(--hero-bg-2), var(--hero-bg));
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(15, 107, 92, 0.25);
 }
 
 .header h1 {
@@ -213,20 +231,16 @@ select:focus-visible {
   border-radius: 50%;
   background-color: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  font-size: 14px;
+  color: #e08a0b;
   transition: transform 0.45s cubic-bezier(0.34, 1.4, 0.64, 1), width 0.15s ease;
-}
-
-.btn-tema-bolinha::before {
-  content: "☀️";
 }
 
 .btn-tema[aria-checked="true"] .btn-tema-bolinha {
   transform: translateX(30px) rotate(360deg);
 }
 
-.btn-tema[aria-checked="true"] .btn-tema-bolinha::before {
-  content: "🌙";
+.btn-tema[aria-checked="true"] .btn-tema-bolinha {
+  color: #0f6b5c;
 }
 
 .btn-tema:active .btn-tema-bolinha {
@@ -239,12 +253,14 @@ select:focus-visible {
 
 .resumo {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-columns: 1.5fr 1fr 1fr;
   gap: 16px;
   margin-bottom: 32px;
 }
 
 .card {
+  position: relative;
+  overflow: hidden;
   background-color: var(--surface);
   padding: 22px 24px;
   border-radius: var(--radius-lg);
@@ -254,14 +270,27 @@ select:focus-visible {
 }
 
 .card h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-muted);
 }
 
+.card-icone {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background-color: var(--surface-2);
+  color: var(--text-muted);
+}
+
 .card p {
-  margin: 10px 0 0;
+  margin: 14px 0 0;
   font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -270,20 +299,39 @@ select:focus-visible {
 /* Saldo é o destaque da tela */
 
 .card.saldo {
-  background-color: var(--hero-bg);
+  background: linear-gradient(135deg, var(--hero-bg-2), var(--hero-bg) 70%);
   border-color: transparent;
+}
+
+/* Brilho suave no canto, só para dar profundidade */
+
+.card.saldo::after {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 70%);
+  pointer-events: none;
 }
 
 .card.saldo h3 {
   color: var(--hero-muted);
 }
 
-.card.saldo p {
+.card.saldo .card-icone {
+  background-color: rgba(255, 255, 255, 0.14);
   color: var(--hero-text);
-  font-size: 36px;
 }
 
-/* Entradas e saídas: discretos, só a cor do valor */
+.card.saldo p {
+  color: var(--hero-text);
+  font-size: 40px;
+}
+
+/* Entradas e saídas: ícone e valor na cor do tipo */
 
 .card.entrada p {
   color: var(--entrada);
@@ -293,28 +341,40 @@ select:focus-visible {
   color: var(--saida);
 }
 
+.card.entrada .card-icone {
+  background-color: color-mix(in srgb, var(--entrada) 16%, transparent);
+  color: var(--entrada);
+}
+
+.card.saida .card-icone {
+  background-color: color-mix(in srgb, var(--saida) 16%, transparent);
+  color: var(--saida);
+}
+
 /* ========================= */
 /* FORMULÁRIO E FILTROS      */
 /* ========================= */
 
-.formulario,
 .filtros {
   display: flex;
   gap: 10px;
   align-items: center;
+  margin-bottom: 20px;
 }
 
+/* Formulário em grade: tipo e categoria ocupam a linha toda */
+
 .formulario {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
   margin-bottom: 28px;
-  padding: 14px;
+  padding: 20px;
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-}
-
-.filtros {
-  margin-bottom: 20px;
 }
 
 .formulario input,
@@ -332,6 +392,11 @@ select:focus-visible {
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+.formulario input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .formulario input::placeholder,
 .filtros input::placeholder {
   color: var(--text-muted);
@@ -345,15 +410,121 @@ select:focus-visible {
   box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
-.formulario input[type="text"] {
-  flex: 2;
-}
-
 .filtros input {
   flex: 1;
 }
 
-.formulario button {
+/* Entrada / Saída */
+
+.seg {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 14px;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.seg-op {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background-color: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.seg-op:hover {
+  color: var(--text);
+}
+
+.seg-op.ativo {
+  background-color: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.seg-op.entrada.ativo {
+  color: var(--entrada);
+  border-color: color-mix(in srgb, var(--entrada) 40%, transparent);
+}
+
+.seg-op.saida.ativo {
+  color: var(--saida);
+  border-color: color-mix(in srgb, var(--saida) 40%, transparent);
+}
+
+/* Categorias como botões com ícone */
+
+.campo-categoria {
+  grid-column: 1 / -1;
+}
+
+.campo-rotulo {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.cat-grade {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cat-op {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.cat-op .icone {
+  color: var(--cor);
+}
+
+.cat-op:hover {
+  border-color: var(--cor);
+}
+
+.cat-op.ativo {
+  border-color: var(--cor);
+  background-color: color-mix(in srgb, var(--cor) 16%, transparent);
+}
+
+.cat-op:active {
+  transform: scale(0.96);
+}
+
+/* Botões de ação do formulário */
+
+.form-acoes {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-salvar {
+  flex: 1;
   padding: 12px 22px;
   border: none;
   border-radius: var(--radius-md);
@@ -366,12 +537,29 @@ select:focus-visible {
   transition: background-color 0.2s ease;
 }
 
-.formulario button:hover {
+.btn-salvar:hover {
   background-color: var(--brand-hover);
 }
 
-.formulario button:active {
+.btn-salvar:active {
   transform: translateY(1px);
+}
+
+.form-acoes .btn-cancelar {
+  padding: 12px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.form-acoes .btn-cancelar:hover {
+  border-color: var(--saida);
+  color: var(--saida);
 }
 
 /* ========================= */
@@ -386,12 +574,11 @@ select:focus-visible {
 
 .transacao {
   background-color: var(--surface);
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-radius: var(--radius-md);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   border: 1px solid var(--border);
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
@@ -400,44 +587,72 @@ select:focus-visible {
   border-color: var(--brand);
 }
 
+/* Ícone da categoria, na cor dela */
+
+.transacao-icone,
+.legenda-icone {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background-color: color-mix(in srgb, var(--cor) 16%, transparent);
+  color: var(--cor);
+}
+
+.info-transacao {
+  flex: 1;
+  min-width: 0;
+}
+
 .info-transacao h3 {
-  margin: 0 0 4px;
-  font-size: 16px;
+  margin: 0 0 3px;
+  font-size: 15px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .info-transacao p {
-  margin: 0 0 4px;
-  font-size: 15px;
-  color: var(--text-muted);
+  margin: 0;
 }
 
-.info-transacao span {
-  font-size: 13px;
-  color: var(--text-muted);
+.lado-transacao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.info-transacao .entrada-texto {
+.valor-transacao {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.valor-transacao.entrada-texto {
   color: var(--entrada);
-  font-weight: 700;
 }
 
-.info-transacao .saida-texto {
+.valor-transacao.saida-texto {
   color: var(--saida);
-  font-weight: 700;
 }
 
-/* Botões de ação: discretos até o hover */
+/* Botões de ação: só o ícone, discretos até o hover */
 
 .btn-editar,
 .btn-excluir {
-  padding: 8px 14px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background-color: transparent;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
@@ -479,23 +694,37 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .formulario,
+  .card.saldo p {
+    font-size: 34px;
+  }
+
   .filtros {
     flex-direction: column;
     align-items: stretch;
   }
 
+  .formulario {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
   .transacao {
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .transacao-icone {
+    width: 40px;
+    height: 40px;
   }
 }
 
 .data-transacao {
   margin: 0;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 500;
+  line-height: 1.4;
 }
 
 /* ========================= */
@@ -539,11 +768,13 @@ select:focus-visible {
 .menu-toggle .sidebar-icone {
   background-color: var(--brand);
   border-color: var(--brand);
+  color: var(--on-brand);
   animation: pop-icone 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 .menu-seta {
-  font-size: 14px;
+  display: grid;
+  place-items: center;
   line-height: 1;
   transition: transform 0.35s ease;
 }
@@ -652,7 +883,7 @@ select:focus-visible {
   border-radius: 50%;
   background-color: var(--surface-2);
   border: 1px solid var(--border);
-  font-size: 21px;
+  color: var(--text-muted);
 }
 
 .sidebar-item.ativo {
@@ -663,6 +894,7 @@ select:focus-visible {
 .sidebar-item.ativo .sidebar-icone {
   background-color: var(--brand);
   border-color: var(--brand);
+  color: var(--on-brand);
 }
 
 /* ========================= */
@@ -703,6 +935,9 @@ select:focus-visible {
 }
 
 .link-ver-todas {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   border: none;
   background: none;
   color: var(--brand);
@@ -717,10 +952,28 @@ select:focus-visible {
 }
 
 .vazio {
-  padding: 32px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 36px 0;
   text-align: center;
   color: var(--text-muted);
   font-size: 14px;
+}
+
+.vazio p {
+  margin: 0;
+}
+
+.vazio-icone {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background-color: var(--brand-soft);
+  color: var(--brand);
 }
 
 .acoes {
@@ -750,7 +1003,6 @@ select:focus-visible {
   border-radius: 50%;
   background-color: var(--surface);
   color: var(--text-muted);
-  font-size: 15px;
   cursor: pointer;
 }
 
@@ -762,7 +1014,7 @@ select:focus-visible {
 /* Valores borrados no modo privado */
 
 .privado .card p,
-.privado .info-transacao p:not(.data-transacao):not(.entrada-texto):not(.saida-texto) {
+.privado .valor-transacao {
   filter: blur(9px);
   user-select: none;
 }
@@ -821,9 +1073,6 @@ select:focus-visible {
     border-color: var(--brand);
   }
 
-  .acoes {
-    width: 100%;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

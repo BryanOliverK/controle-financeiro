@@ -1,4 +1,5 @@
-import { nomeCategoria } from "../utils/categorias"
+import Icone from "./Icone"
+import { infoCategoria, nomeCategoria, SEM_CATEGORIA } from "../utils/categorias"
 import { brl } from "../utils/formatar"
 
 // Uma linha da lista. Se receber onEditar/onExcluir, mostra os botões
@@ -9,31 +10,25 @@ function Transacao({ transacao, onEditar, onExcluir }) {
 
     const dataTransacao = new Date(data)
     const mostrarAcoes = categoria !== "caixinha" && (onEditar || onExcluir)
+    const entrada = tipo === "entrada"
+
+    const info = infoCategoria(categoria) || SEM_CATEGORIA
 
     return (
         <div className="transacao">
 
+            <span className="transacao-icone" style={{ "--cor": info.cor }}>
+                <Icone nome={info.icone} tamanho={22} />
+            </span>
+
             <div className="info-transacao">
                 <h3>{descricao}</h3>
 
-                {categoria && (
-                    <span className="categoria">
-                        {nomeCategoria(categoria)}
-                    </span>
-                )}
-
-                <p>
-                    {tipo === "entrada" ? "+" : "-"}{brl(valor)}
-                </p>
-
-                <span className={tipo === "entrada" ? "entrada-texto": "saida-texto"}>
-                   {tipo === "entrada" ? "Entrada": "Saída"}
-                </span>
-
                 <p className="data-transacao">
+                    {categoria && <>{nomeCategoria(categoria)}{" · "}</>}
                     {dataTransacao.toLocaleDateString("pt-BR", {
                         day: "2-digit",
-                        month: "long",
+                        month: "short",
                         year: "numeric"
                     })}
                     {" · "}
@@ -44,23 +39,42 @@ function Transacao({ transacao, onEditar, onExcluir }) {
                 </p>
             </div>
 
-            {mostrarAcoes && (
-                <div className="acoes">
+            <div className="lado-transacao">
 
-                    {onEditar && (
-                        <button className="btn-editar" onClick={() => onEditar(id)}>
-                            Editar
-                        </button>
-                    )}
+                <p className={entrada ? "valor-transacao entrada-texto" : "valor-transacao saida-texto"}>
+                    <span className="sr-only">{entrada ? "Entrada " : "Saída "}</span>
+                    {entrada ? "+" : "-"}{brl(valor)}
+                </p>
 
-                    {onExcluir && (
-                        <button className="btn-excluir" onClick={() => onExcluir(id)}>
-                            Excluir
-                        </button>
-                    )}
+                {mostrarAcoes && (
+                    <div className="acoes">
 
-                </div>
-            )}
+                        {onEditar && (
+                            <button
+                                className="btn-editar"
+                                onClick={() => onEditar(id)}
+                                aria-label={`Editar ${descricao}`}
+                                title="Editar"
+                            >
+                                <Icone nome="editar" tamanho={16} />
+                            </button>
+                        )}
+
+                        {onExcluir && (
+                            <button
+                                className="btn-excluir"
+                                onClick={() => onExcluir(id)}
+                                aria-label={`Excluir ${descricao}`}
+                                title="Excluir"
+                            >
+                                <Icone nome="lixeira" tamanho={16} />
+                            </button>
+                        )}
+
+                    </div>
+                )}
+
+            </div>
 
         </div>
     )

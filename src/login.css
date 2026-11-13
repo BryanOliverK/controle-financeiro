@@ -35,8 +35,9 @@
   width: 64px;
   height: 64px;
   border-radius: 18px;
-  background-color: var(--brand-soft);
-  font-size: 32px;
+  background: linear-gradient(135deg, var(--hero-bg-2), var(--hero-bg));
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(15, 107, 92, 0.25);
 }
 
 .login-card h1 {

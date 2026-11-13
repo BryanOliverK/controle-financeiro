@@ -1,3 +1,4 @@
+import Icone from "./Icone"
 import { useState } from "react"
 
 // Menu lateral (no celular vira um botão que abre para cima).
@@ -21,8 +22,8 @@ function Sidebar({ abas, aba, onMudar }) {
         aria-expanded={aberto}
         aria-label={aberto ? "Fechar menu" : "Abrir menu"}
       >
-        <span className="sidebar-icone" key={aba}>{abaAtual.icone}</span>
-        <span className="menu-seta">⌄</span>
+        <span className="sidebar-icone" key={aba}><Icone nome={abaAtual.icone} tamanho={22} /></span>
+        <span className="menu-seta"><Icone nome="chevronBaixo" tamanho={16} /></span>
       </button>
 
       <nav className="menu-lista">
@@ -37,7 +38,7 @@ function Sidebar({ abas, aba, onMudar }) {
               }}
               aria-current={aba === item.id ? "page" : undefined}
             >
-              <span className="sidebar-icone">{item.icone}</span>
+              <span className="sidebar-icone"><Icone nome={item.icone} tamanho={22} /></span>
               <span className="sidebar-nome">{item.nome}</span>
             </button>
           ))}

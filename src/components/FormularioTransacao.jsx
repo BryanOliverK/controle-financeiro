@@ -1,6 +1,12 @@
+import Icone from "./Icone"
 import { categoriasPara } from "../utils/categorias"
 import { hojeLocal } from "../utils/formatar"
 import { LIMITE_DESCRICAO } from "../utils/validacao"
+
+const TIPOS = [
+  { valor: "entrada", nome: "Entrada", icone: "setaEntrada" },
+  { valor: "saida", nome: "Saída", icone: "setaSaida" }
+]
 
 // Formulário de nova transação / edição. Os campos ficam no App (prop "form"),
 // assim o que foi digitado não se perde ao trocar de aba.
@@ -20,6 +26,22 @@ function FormularioTransacao({ form, editando, onAlterar, onSalvar, onCancelar }
       </h2>
 
       <form className="formulario" onSubmit={enviar} noValidate>
+
+        <div className="seg" role="radiogroup" aria-label="Tipo">
+          {TIPOS.map((tipo) => (
+            <button
+              key={tipo.valor}
+              type="button"
+              role="radio"
+              aria-checked={form.tipo === tipo.valor}
+              className={`seg-op ${tipo.valor}${form.tipo === tipo.valor ? " ativo" : ""}`}
+              onClick={() => onAlterar("tipo", tipo.valor)}
+            >
+              <Icone nome={tipo.icone} tamanho={18} />
+              {tipo.nome}
+            </button>
+          ))}
+        </div>
 
         <div className="campo-descricao">
           <input
@@ -49,32 +71,32 @@ function FormularioTransacao({ form, editando, onAlterar, onSalvar, onCancelar }
           inputMode="decimal"
           min="0"
           step="0.01"
-          placeholder="Valor"
+          placeholder="Valor (R$)"
           aria-label="Valor"
           value={form.valor}
           onChange={(e) => onAlterar("valor", e.target.value)}
         />
 
-        <select
-          aria-label="Tipo"
-          value={form.tipo}
-          onChange={(e) => onAlterar("tipo", e.target.value)}
-        >
-          <option value="">Selecione o tipo</option>
-          <option value="entrada">Entrada</option>
-          <option value="saida">Saída</option>
-        </select>
+        <div className="campo-categoria">
+          <span className="campo-rotulo" id="rotulo-categoria">Categoria</span>
 
-        <select
-          aria-label="Categoria"
-          value={form.categoria}
-          onChange={(e) => onAlterar("categoria", e.target.value)}
-        >
-          <option value="">Selecione a Categoria</option>
-          {categorias.map(([chave, info]) => (
-            <option key={chave} value={chave}>{info.nome}</option>
-          ))}
-        </select>
+          <div className="cat-grade" role="radiogroup" aria-labelledby="rotulo-categoria">
+            {categorias.map(([chave, info]) => (
+              <button
+                key={chave}
+                type="button"
+                role="radio"
+                aria-checked={form.categoria === chave}
+                className={form.categoria === chave ? "cat-op ativo" : "cat-op"}
+                style={{ "--cor": info.cor }}
+                onClick={() => onAlterar("categoria", chave)}
+              >
+                <Icone nome={info.icone} tamanho={18} />
+                {info.nome}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <input
           type="date"
@@ -83,15 +105,17 @@ function FormularioTransacao({ form, editando, onAlterar, onSalvar, onCancelar }
           onChange={(e) => onAlterar("data", e.target.value)}
         />
 
-        <button type="submit">
-          {editando ? "Salvar Alteração" : "Adicionar Transação"}
-        </button>
-
-        {editando && (
-          <button type="button" className="btn-cancelar" onClick={onCancelar}>
-            Cancelar
+        <div className="form-acoes">
+          <button type="submit" className="btn-salvar">
+            {editando ? "Salvar alteração" : "Adicionar transação"}
           </button>
-        )}
+
+          {editando && (
+            <button type="button" className="btn-cancelar" onClick={onCancelar}>
+              Cancelar
+            </button>
+          )}
+        </div>
 
       </form>
     </>

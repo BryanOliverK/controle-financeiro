@@ -1,7 +1,8 @@
 import { useState } from "react"
+import Icone, { EMOJIS_CAIXINHA, IconeCaixinha } from "./Icone"
+import Vazio from "./Vazio"
 import { brl, hojeLocal } from "../utils/formatar"
 
-const EMOJIS = ["🐷", "💰", "✈️", "🏠", "🚗", "🎓", "🛡️", "🎁"]
 const DIAS_UTEIS_MES = 21
 
 // Fica fora do componente para o React não reclamar de função "impura" no render
@@ -88,11 +89,12 @@ function CaixinhaCard({ caixinha, taxaAnual, onMovimentar, onExcluir }) {
 
       <div className="cx-topo">
         <div className="cx-nome">
-          <span className="cx-emoji">{caixinha.emoji}</span>
+          <span className="cx-emoji"><IconeCaixinha emoji={caixinha.emoji} /></span>
           {caixinha.nome}
         </div>
 
         <button className="cx-excluir" onClick={() => onExcluir(caixinha.id)}>
+          <Icone nome="lixeira" tamanho={14} />
           Excluir
         </button>
       </div>
@@ -114,11 +116,11 @@ function CaixinhaCard({ caixinha, taxaAnual, onMovimentar, onExcluir }) {
           </div>
 
           {caixinha.saldo >= meta.valor ? (
-            <p className="cx-info">🎉 Meta atingida!</p>
+            <p className="cx-info cx-ok"><Icone nome="estrela" tamanho={16} /> Meta atingida!</p>
           ) : meses <= 0 ? (
             <p className="cx-info">O prazo da meta já passou.</p>
           ) : aporte === 0 ? (
-            <p className="cx-info">✅ Só com o rendimento você já chega lá.</p>
+            <p className="cx-info cx-ok"><Icone nome="checkCirculo" tamanho={16} /> Só com o rendimento você já chega lá.</p>
           ) : (
             <p className="cx-info">
               Para chegar lá, guarde cerca de{" "}
@@ -145,7 +147,7 @@ function CaixinhaCard({ caixinha, taxaAnual, onMovimentar, onExcluir }) {
             <p className="cx-info">
               Você chegaria a <b className="cx-valor">{brl(projecao)}</b>{" "}
               {projecao >= meta.valor
-                ? "✅ meta batida"
+                ? <span className="cx-ok"><Icone nome="checkCirculo" tamanho={16} /> meta batida</span>
                 : <>· faltariam <b className="cx-valor">{brl(meta.valor - projecao)}</b></>}
             </p>
           )}
@@ -191,7 +193,7 @@ function Caixinhas({
 }) {
 
   const [nome, setNome] = useState("")
-  const [emoji, setEmoji] = useState("🐷")
+  const [emoji, setEmoji] = useState(EMOJIS_CAIXINHA[0])
   const [metaValor, setMetaValor] = useState("")
   const [metaData, setMetaData] = useState("")
 
@@ -237,14 +239,15 @@ function Caixinhas({
         <h3>Nova caixinha</h3>
 
         <div className="cx-emojis">
-          {EMOJIS.map((e) => (
+          {EMOJIS_CAIXINHA.map((e) => (
             <button
               key={e}
               className={e === emoji ? "cx-emoji-btn ativo" : "cx-emoji-btn"}
               onClick={() => setEmoji(e)}
               aria-pressed={e === emoji}
+              aria-label={`Ícone ${e}`}
             >
-              {e}
+              <IconeCaixinha emoji={e} />
             </button>
           ))}
         </div>
@@ -279,7 +282,7 @@ function Caixinhas({
       </div>
 
       {caixinhas.length === 0 && (
-        <p className="vazio">Nenhuma caixinha ainda. Crie a primeira acima.</p>
+        <Vazio icone="caixinha">Nenhuma caixinha ainda. Crie a primeira acima.</Vazio>
       )}
 
       <div className="cx-lista">

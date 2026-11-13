@@ -8,6 +8,8 @@ import FormularioTransacao from './components/FormularioTransacao'
 import Categorias from './components/Categorias'
 import Caixinhas from './components/Caixinhas'
 import Backup from './components/Backup'
+import Icone from './components/Icone'
+import Vazio from './components/Vazio'
 import Login from './components/Login'
 import TelaCarregando from './components/TelaCarregando'
 import { auth, db, provider } from './firebase'
@@ -57,11 +59,11 @@ import './carregando.css'
 const FORM_VAZIO = { descricao: "", valor: "", tipo: "", categoria: "", data: "" }
 
 const ABAS = [
-  { id: "inicio", icone: "📊", nome: "Início" },
-  { id: "transacoes", icone: "💳", nome: "Transações" },
-  { id: "graficos", icone: "📈", nome: "Gráficos" },
-  { id: "caixinhas", icone: "🐷", nome: "Caixinhas" },
-  { id: "nova", icone: "➕", nome: "Adicionar" }
+  { id: "inicio", icone: "inicio", nome: "Início" },
+  { id: "transacoes", icone: "transacoes", nome: "Transações" },
+  { id: "graficos", icone: "graficos", nome: "Gráficos" },
+  { id: "caixinhas", icone: "caixinha", nome: "Caixinhas" },
+  { id: "nova", icone: "adicionar", nome: "Adicionar" }
 ]
 
 function App() {
@@ -193,7 +195,6 @@ function App() {
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
       .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi])
 
   // ===== Fim do código do Firebase =====
@@ -632,7 +633,7 @@ function App() {
               aria-label={privado ? "Mostrar valores" : "Ocultar valores"}
               title={privado ? "Mostrar valores" : "Ocultar valores"}
             >
-              {privado ? "🙈" : "👁️"}
+              <Icone nome={privado ? "olhoOff" : "olho"} tamanho={18} />
             </button>
 
             <button
@@ -642,7 +643,9 @@ function App() {
               aria-label="Alternar modo escuro"
               onClick={() => setModoEscuro(!modoEscuro)}
             >
-              <span className="btn-tema-bolinha" />
+              <span className="btn-tema-bolinha">
+                <Icone nome={modoEscuro ? "lua" : "sol"} tamanho={15} />
+              </span>
             </button>
 
             <button className="btn-sair" onClick={sair} title={usuario.email}>
@@ -682,13 +685,14 @@ function App() {
                   className="link-ver-todas"
                   onClick={() => mudarAba("transacoes")}
                 >
-                  Ver todas →
+                  Ver todas
+                  <Icone nome="chevronDireita" tamanho={16} />
                 </button>
               </div>
 
               <div className="transacoes">
                 {ultimasTransacoes.length === 0 && (
-                  <p className="vazio">Nenhuma transação ainda.</p>
+                  <Vazio icone="transacoes">Nenhuma transação ainda.</Vazio>
                 )}
 
                 {ultimasTransacoes.map((transacao) => (
@@ -737,7 +741,7 @@ function App() {
 
               <div className="transacoes">
                 {transacoesOrdenadas.length === 0 && (
-                  <p className="vazio">Nenhuma transação encontrada.</p>
+                  <Vazio icone="transacoes">Nenhuma transação encontrada.</Vazio>
                 )}
 
                 {transacoesPorData.map(([data, grupo]) => (

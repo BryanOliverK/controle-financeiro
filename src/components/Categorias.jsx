@@ -1,3 +1,5 @@
+import Icone from "./Icone"
+import Vazio from "./Vazio"
 import { SEM_CATEGORIA, infoCategoria } from "../utils/categorias"
 import { brl } from "../utils/formatar"
 
@@ -7,11 +9,7 @@ function Categorias({ gastosPorCategoria, totalGastos }) {
     .sort((a, b) => b[1] - a[1])
 
   if (lista.length === 0) {
-    return (
-      <p className="vazio">
-        Nenhum gasto registrado ainda.
-      </p>
-    )
+    return <Vazio icone="graficos">Nenhum gasto registrado ainda.</Vazio>
   }
 
   // Cria os segmentos do gráfico (o início de cada um é a soma dos anteriores)
@@ -31,7 +29,8 @@ function Categorias({ gastosPorCategoria, totalGastos }) {
       porcentagem,
       inicio,
       cor: info.cor,
-      nome: info.nome
+      nome: info.nome,
+      icone: info.icone
     }
   })
 
@@ -76,11 +75,11 @@ function Categorias({ gastosPorCategoria, totalGastos }) {
 
               <div className="legenda-nome">
                 <span
-                  className="legenda-cor"
-                  style={{
-                    backgroundColor: segmento.cor
-                  }}
-                />
+                  className="legenda-icone"
+                  style={{ "--cor": segmento.cor }}
+                >
+                  <Icone nome={segmento.icone} tamanho={18} />
+                </span>
 
                 <span>
                   {segmento.nome}

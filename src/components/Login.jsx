@@ -1,9 +1,12 @@
+import Icone from "./Icone"
+
+
 function Login({ onEntrar, erro, modoEscuro }) {
   return (
     <div className={modoEscuro ? "tela-login modo-escuro" : "tela-login"}>
       <div className="login-card">
 
-        <span className="login-icone">💰</span>
+        <span className="login-icone"><Icone nome="carteira" tamanho={32} /></span>
 
         <h1>Controle Financeiro</h1>
 

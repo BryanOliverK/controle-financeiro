@@ -177,7 +177,6 @@
 .campo-descricao {
   position: relative;
   display: flex;
-  flex: 2 1 240px;
 }
 
 .campo-descricao input {
@@ -200,10 +199,4 @@
 
 .contador.cheio {
   color: var(--saida);
-}
-
-@media (max-width: 700px) {
-  .campo-descricao {
-    flex: none;
-  }
 }

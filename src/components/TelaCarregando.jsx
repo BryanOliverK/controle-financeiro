@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import Icone from "./Icone"
 
 const ETAPAS = ["Verificando seu login", "Sincronizando seus dados"]
 
@@ -36,7 +37,7 @@ function TelaCarregando({ etapa = 0, modoEscuro }) {
     >
       <div className="carregando-card">
 
-        <span className="carregando-icone">💰</span>
+        <span className="carregando-icone"><Icone nome="carteira" tamanho={32} /></span>
 
         <h1>Controle Financeiro</h1>
 
@@ -58,7 +59,7 @@ function TelaCarregando({ etapa = 0, modoEscuro }) {
             return (
               <li key={nome} className={estado}>
                 <span className="carregando-marca" aria-hidden="true">
-                  {estado === "feita" ? "✓" : ""}
+                  {estado === "feita" && <Icone nome="check" tamanho={12} />}
                 </span>
                 {nome}
               </li>

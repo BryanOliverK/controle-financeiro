@@ -1,4 +1,5 @@
 import { useRef } from "react"
+import Icone from "./Icone"
 
 // Cartão de backup: baixa os dados em um arquivo e importa de volta.
 function Backup({ onExportar, onImportar }) {
@@ -29,6 +30,7 @@ function Backup({ onExportar, onImportar }) {
 
       <div className="backup-acoes">
         <button className="btn-exportar" onClick={onExportar}>
+          <Icone nome="baixar" tamanho={16} />
           Exportar backup
         </button>
 
@@ -36,6 +38,7 @@ function Backup({ onExportar, onImportar }) {
           className="btn-exportar"
           onClick={() => inputArquivo.current?.click()}
         >
+          <Icone nome="subir" tamanho={16} />
           Importar backup
         </button>
 

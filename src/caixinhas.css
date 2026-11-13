@@ -75,9 +75,12 @@
   width: 40px;
   height: 40px;
   border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  padding: 0;
   border-radius: 50%;
   background-color: var(--surface-2);
-  font-size: 18px;
+  color: var(--text-muted);
   cursor: pointer;
   transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1), background-color 0.2s ease;
 }
@@ -89,6 +92,7 @@
 .cx-emoji-btn.ativo {
   background-color: var(--brand-soft);
   border-color: var(--brand);
+  color: var(--brand);
 }
 
 .cx-nova-campos {
@@ -149,10 +153,13 @@
   height: 38px;
   border-radius: 50%;
   background-color: var(--brand-soft);
-  font-size: 18px;
+  color: var(--brand);
 }
 
 .cx-excluir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: none;
   background: none;
   color: var(--text-muted);
@@ -224,6 +231,20 @@
 
 .cx-info b {
   color: var(--text);
+}
+
+/* Mensagens de meta batida: ícone e texto alinhados, em verde */
+
+.cx-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--entrada);
+  font-weight: 700;
+}
+
+.cx-info.cx-ok {
+  display: flex;
 }
 
 /* Guardar / retirar */
