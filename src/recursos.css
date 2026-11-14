@@ -449,3 +449,209 @@
     animation: none;
   }
 }
+
+/* ========================================= */
+/* ATALHOS, INSTALAR, BOAS-VINDAS            */
+/* ========================================= */
+
+.btn-instalar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--brand);
+  border-radius: 999px;
+  background-color: var(--brand-soft);
+  color: var(--brand);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-instalar:hover {
+  background-color: var(--brand);
+  color: var(--on-brand);
+}
+
+.btn-atalhos {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* Sem teclado (celular), o botão de atalhos não faz sentido */
+
+@media (hover: none), (max-width: 700px) {
+  .btn-atalhos {
+    display: none;
+  }
+}
+
+/* Janela de ajuda */
+
+.ajuda-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.ajuda-janela {
+  width: 100%;
+  max-width: 380px;
+  box-sizing: border-box;
+  padding: 24px;
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  font-family: var(--font);
+}
+
+.ajuda-janela h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.ajuda-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.ajuda-lista li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ajuda-lista kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-bottom-width: 3px;
+  border-radius: 8px;
+  background-color: var(--surface-2);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ajuda-fechar {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: var(--brand);
+  color: var(--on-brand);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Boas-vindas */
+
+.boas-vindas {
+  margin-bottom: 24px;
+  padding: 24px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.boas-vindas h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.boas-vindas > p {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.boas-passos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.boas-passos li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.boas-icone {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background-color: var(--brand-soft);
+  color: var(--brand);
+}
+
+.boas-passos li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.boas-passos strong {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.boas-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.boas-acoes .btn-salvar {
+  flex: 1 1 240px;
+}
+
+.boas-acoes .btn-cancelar {
+  padding: 12px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.boas-acoes .btn-cancelar:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}

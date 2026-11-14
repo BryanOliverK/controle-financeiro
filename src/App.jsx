@@ -7,7 +7,9 @@ import Transacao from './components/Transacao'
 import FormularioTransacao from './components/FormularioTransacao'
 import Categorias from './components/Categorias'
 import Caixinhas from './components/Caixinhas'
+import AjudaAtalhos from './components/AjudaAtalhos'
 import Backup from './components/Backup'
+import BoasVindas from './components/BoasVindas'
 import ComparacaoMeses from './components/ComparacaoMeses'
 import Orcamentos from './components/Orcamentos'
 import Recorrentes from './components/Recorrentes'
@@ -25,9 +27,11 @@ import {
 import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 
 import { useAviso } from './hooks/useAviso'
+import { useAtalhos } from './hooks/useAtalhos'
+import { useInstalar } from './hooks/useInstalar'
 import { useLocalStorage } from './hooks/useLocalStorage'
 
-import { categoriaCompativel } from './utils/categorias'
+import { categoriaCompativel, nomeCategoria } from './utils/categorias'
 import {
   agruparPorData,
   calcularResumo,
@@ -50,6 +54,7 @@ import {
 import { unirPorId } from './utils/listas'
 import { gastoDaCategoria, limparOrcamentos, mensagemAlerta } from './utils/orcamentos'
 import { criarRecorrente, gerarPendentes } from './utils/recorrentes'
+import { imprimirRelatorio, montarRelatorioHtml } from './utils/relatorio'
 import { validarTransacao } from './utils/validacao'
 
 import './App.css'
@@ -87,6 +92,7 @@ function App() {
   const [form, setForm] = useState(FORM_VAZIO)
   const [editandoId, setEditandoId] = useState(null)
   const [erroSincronia, setErroSincronia] = useState("")
+  const [ajudaAberta, setAjudaAberta] = useState(false)
 
   // Dados (guardados no aparelho; a sincronização com a nuvem vem mais abaixo)
 
@@ -97,8 +103,10 @@ function App() {
   const [orcamentos, setOrcamentos] = useLocalStorage("orcamentos", {})
   const [recorrentes, setRecorrentes] = useLocalStorage("recorrentes", [])
   const [modoEscuro, setModoEscuro] = useLocalStorage("modoEscuro", false)
+  const [boasVindasVistas, setBoasVindasVistas] = useLocalStorage("boasVindasVistas", false)
 
   const { aviso, mostrarAviso, fecharAviso } = useAviso()
+  const { podeInstalar, instalar } = useInstalar()
 
   // ===== Firebase: login e sincronização (código original, sem alterações) =====
 
@@ -472,6 +480,37 @@ function App() {
     mostrarAviso("Arquivo exportado")
   }
 
+  function exportarPDF() {
+
+    if (transacoesDoMes.length === 0) {
+      mostrarAviso("Não há transações para o relatório", "erro")
+      return
+    }
+
+    const html = montarRelatorioHtml({
+      titulo: mesAtivo === "todos" ? "Todos os meses" : nomeMes(mesAtivo),
+      geradoEm: new Date().toLocaleString("pt-BR"),
+      resumo: { saldo, entradas, saidas },
+      categorias: Object.entries(gastos)
+        .sort((a, b) => b[1] - a[1])
+        .map(([chave, valor]) => ({
+          nome: chave === "sem-categoria" ? "Sem categoria" : nomeCategoria(chave),
+          valor,
+          porcentagem: totalGastos > 0 ? (valor / totalGastos) * 100 : 0
+        })),
+      transacoes: ordenar(transacoesDoMes, "antigas").map((t) => ({
+        data: t.data,
+        descricao: t.descricao,
+        categoriaNome: t.categoria ? nomeCategoria(t.categoria) : "",
+        tipo: t.tipo,
+        valor: t.valor
+      }))
+    })
+
+    imprimirRelatorio(html)
+    mostrarAviso('Na janela que abrir, escolha "Salvar como PDF"')
+  }
+
   // Orçamentos e lançamentos mensais
 
   function definirOrcamento(categoria, valor) {
@@ -741,12 +780,33 @@ function App() {
     signOut(auth).then(() => {
 
       // Limpa a cópia local para ninguém ver seus dados neste aparelho
-      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi"]
+      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi", "orcamentos", "recorrentes"]
         .forEach((chave) => localStorage.removeItem(chave))
 
       window.location.reload()
     })
   }
+
+  // Atalhos de teclado (só com o app aberto, depois do login e da sincronização)
+
+  function irParaCampo(seletor) {
+    setTimeout(() => document.querySelector(seletor)?.focus(), 60)
+  }
+
+  useAtalhos(
+    {
+      n: () => { mudarAba("nova"); irParaCampo(".campo-descricao input") },
+      "/": () => { mudarAba("transacoes"); irParaCampo('input[aria-label="Pesquisar transação"]') },
+      i: () => mudarAba("inicio"),
+      t: () => mudarAba("transacoes"),
+      g: () => mudarAba("graficos"),
+      c: () => mudarAba("caixinhas"),
+      p: () => setPrivado(!privado),
+      d: () => setModoEscuro(!modoEscuro),
+      "?": () => setAjudaAberta(true)
+    },
+    Boolean(usuario) && sincronizado && !ajudaAberta
+  )
 
   // Telas de espera (login, sincronização)
 
@@ -777,6 +837,22 @@ function App() {
 
         <Header>
           <div className="header-acoes">
+            {podeInstalar && (
+              <button className="btn-instalar" onClick={instalar}>
+                <Icone nome="baixar" tamanho={16} />
+                Instalar app
+              </button>
+            )}
+
+            <button
+              className="btn-olho btn-atalhos"
+              onClick={() => setAjudaAberta(true)}
+              aria-label="Atalhos de teclado"
+              title="Atalhos de teclado (?)"
+            >
+              ?
+            </button>
+
             <button
               className="btn-olho"
               onClick={() => setPrivado(!privado)}
@@ -823,6 +899,13 @@ function App() {
 
           {aba === "inicio" && (
             <>
+              {!boasVindasVistas && transacoes.length === 0 && (
+                <BoasVindas
+                  onComecar={() => { setBoasVindasVistas(true); mudarAba("nova") }}
+                  onDispensar={() => setBoasVindasVistas(true)}
+                />
+              )}
+
               <Resumo
                 saldo={saldo}
                 entradas={entradas}
@@ -886,6 +969,10 @@ function App() {
 
                 <button className="btn-exportar" onClick={exportarCSV}>
                   Exportar CSV
+                </button>
+
+                <button className="btn-exportar" onClick={exportarPDF}>
+                  Relatório PDF
                 </button>
               </div>
 
@@ -976,6 +1063,8 @@ function App() {
         </div>
 
       </main>
+
+      {ajudaAberta && <AjudaAtalhos onFechar={() => setAjudaAberta(false)} />}
 
       {aviso && (
         <div className={"aviso " + aviso.tipo} key={aviso.id} role="status">
