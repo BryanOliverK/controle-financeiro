@@ -19,7 +19,10 @@ import Login from './components/Login'
 import TelaCarregando from './components/TelaCarregando'
 import { auth, db, provider } from './firebase'
 import {
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
   signOut
@@ -55,6 +58,7 @@ import { unirPorId } from './utils/listas'
 import { gastoDaCategoria, limparOrcamentos, mensagemAlerta } from './utils/orcamentos'
 import { criarRecorrente, gerarPendentes } from './utils/recorrentes'
 import { imprimirRelatorio, montarRelatorioHtml } from './utils/relatorio'
+import { mensagemErroAuth } from './utils/erroAuth'
 import { validarTransacao } from './utils/validacao'
 
 import './App.css'
@@ -776,6 +780,41 @@ function App() {
     })
   }
 
+  // Firebase: login por e-mail e senha (adicionado depois do código original).
+  // Cada função devolve o texto do erro, ou null quando deu certo.
+
+  async function entrarComEmail(email, senha) {
+    setErroLogin("")
+
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), senha)
+      return null
+    } catch (erro) {
+      return mensagemErroAuth(erro.code)
+    }
+  }
+
+  async function criarContaComEmail(email, senha) {
+    setErroLogin("")
+
+    try {
+      await createUserWithEmailAndPassword(auth, email.trim(), senha)
+      return null
+    } catch (erro) {
+      return mensagemErroAuth(erro.code)
+    }
+  }
+
+  async function recuperarSenha(email) {
+    try {
+      await sendPasswordResetEmail(auth, email.trim())
+      return null
+    } catch (erro) {
+      // Não revela se o e-mail tem conta ou não
+      return erro.code === "auth/user-not-found" ? null : mensagemErroAuth(erro.code)
+    }
+  }
+
   function sair() {
     signOut(auth).then(() => {
 
@@ -815,7 +854,16 @@ function App() {
   }
 
   if (!usuario) {
-    return <Login onEntrar={entrarComGoogle} erro={erroLogin} modoEscuro={modoEscuro} />
+    return (
+      <Login
+        onEntrar={entrarComGoogle}
+        onEntrarEmail={entrarComEmail}
+        onCriarConta={criarContaComEmail}
+        onRecuperarSenha={recuperarSenha}
+        erro={erroLogin}
+        modoEscuro={modoEscuro}
+      />
+    )
   }
 
   if (!sincronizado) {
