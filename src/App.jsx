@@ -8,6 +8,9 @@ import FormularioTransacao from './components/FormularioTransacao'
 import Categorias from './components/Categorias'
 import Caixinhas from './components/Caixinhas'
 import Backup from './components/Backup'
+import ComparacaoMeses from './components/ComparacaoMeses'
+import Orcamentos from './components/Orcamentos'
+import Recorrentes from './components/Recorrentes'
 import Icone from './components/Icone'
 import Vazio from './components/Vazio'
 import Login from './components/Login'
@@ -45,6 +48,8 @@ import {
   paraInputData
 } from './utils/formatar'
 import { unirPorId } from './utils/listas'
+import { gastoDaCategoria, limparOrcamentos, mensagemAlerta } from './utils/orcamentos'
+import { criarRecorrente, gerarPendentes } from './utils/recorrentes'
 import { validarTransacao } from './utils/validacao'
 
 import './App.css'
@@ -54,9 +59,10 @@ import './extras.css'
 import './caixinhas.css'
 import './login.css'
 import './carregando.css'
+import './recursos.css'
 
 // data vazia = hoje (o formulário mostra a data de hoje e resolve ao salvar)
-const FORM_VAZIO = { descricao: "", valor: "", tipo: "", categoria: "", data: "" }
+const FORM_VAZIO = { descricao: "", valor: "", tipo: "", categoria: "", data: "", repetir: false }
 
 const ABAS = [
   { id: "inicio", icone: "inicio", nome: "Início" },
@@ -87,6 +93,8 @@ function App() {
   const [caixinhas, setCaixinhas] = useLocalStorage("caixinhas", [])
   const [cdi, setCdi] = useLocalStorage("cdi", "14.5", { texto: true })
   const [pctCdi, setPctCdi] = useLocalStorage("pctCdi", "100", { texto: true })
+  const [orcamentos, setOrcamentos] = useLocalStorage("orcamentos", {})
+  const [recorrentes, setRecorrentes] = useLocalStorage("recorrentes", [])
   const [modoEscuro, setModoEscuro] = useLocalStorage("modoEscuro", false)
 
   const { aviso, mostrarAviso, fecharAviso } = useAviso()
@@ -143,12 +151,16 @@ function App() {
     const remotasC = dados.caixinhas || []
     const cdiRemoto = dados.cdi ?? "14.5"
     const pctRemoto = dados.pctCdi ?? "100"
+    const orcamentosRemoto = limparOrcamentos(dados.orcamentos)
+    const recorrentesRemoto = dados.recorrentes || []
 
     const chave = JSON.stringify({
       transacoes: remotasT,
       caixinhas: remotasC,
       cdi: cdiRemoto,
-      pctCdi: pctRemoto
+      pctCdi: pctRemoto,
+      orcamentos: orcamentosRemoto,
+      recorrentes: recorrentesRemoto
     })
 
     if (chave !== ultimoRemoto.current) {
@@ -164,6 +176,14 @@ function App() {
 
       setCdi(cdiRemoto)
       setPctCdi(pctRemoto)
+
+      setOrcamentos((locais) =>
+        primeiraVez ? { ...locais, ...orcamentosRemoto } : orcamentosRemoto
+      )
+
+      setRecorrentes((locais) =>
+        primeiraVez ? unirPorId(recorrentesRemoto, locais) : recorrentesRemoto
+      )
     }
 
     localStorage.setItem(chaveMigracao, "1")
@@ -181,7 +201,9 @@ function App() {
       transacoes,
       caixinhas,
       cdi,
-      pctCdi
+      pctCdi,
+      orcamentos,
+      recorrentes
     }))
 
     const chave = JSON.stringify(dados)
@@ -195,9 +217,37 @@ function App() {
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
       .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
 
-  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi])
+  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes])
 
   // ===== Fim do código do Firebase =====
+
+  // Lançamentos mensais: lança os meses que já chegaram (só depois de sincronizar)
+
+  useEffect(() => {
+    if (!usuario || !sincronizado) {
+      return
+    }
+
+    const pendentes = gerarPendentes(recorrentes)
+
+    if (!pendentes) {
+      return
+    }
+
+    setRecorrentes(pendentes.recorrentes)
+
+    setTransacoes((atuais) => {
+      const ids = new Set(atuais.map((t) => t.id))
+      const novas = pendentes.transacoes.filter((t) => !ids.has(t.id))
+
+      return novas.length > 0 ? [...atuais, ...novas] : atuais
+    })
+
+    mostrarAviso(
+      "Lançado automaticamente: " +
+      contar(pendentes.transacoes.length, "transação mensal", "transações mensais")
+    )
+  }, [usuario, sincronizado, recorrentes, setRecorrentes, setTransacoes, mostrarAviso])
 
   // Valores calculados
 
@@ -212,6 +262,9 @@ function App() {
       : transacoes.filter((t) => chaveMes(t.data) === mesAtivo),
     [transacoes, mesAtivo]
   )
+
+  // O orçamento é mensal: usa o mês escolhido no filtro ou, em "todos", o mês atual
+  const mesOrcamento = mesAtivo === "todos" ? chaveMes(new Date()) : mesAtivo
 
   const { saldo, entradas, saidas } = useMemo(
     () => calcularResumo(transacoesDoMes),
@@ -302,19 +355,38 @@ function App() {
 
     } else {
 
-      setTransacoes((atuais) => [
-        ...atuais,
-        {
-          id: novoId(),
-          descricao: form.descricao.trim(),
-          valor: valorNumerico,
-          tipo: form.tipo,
-          categoria: form.categoria,
-          data: dataParaIso(form.data)
-        }
-      ])
+      const nova = {
+        id: novoId(),
+        descricao: form.descricao.trim(),
+        valor: valorNumerico,
+        tipo: form.tipo,
+        categoria: form.categoria,
+        data: dataParaIso(form.data)
+      }
 
-      mostrarAviso("Transação adicionada")
+      setTransacoes((atuais) => [...atuais, nova])
+
+      // "Repetir todo mês": a próxima já cai no mês seguinte
+      if (form.repetir) {
+        setRecorrentes((atuais) => [...atuais, criarRecorrente(nova, nova.data)])
+      }
+
+      // Saída que chegou perto (ou passou) do orçamento da categoria
+      const limite = orcamentos[nova.categoria]
+      const mesNova = chaveMes(nova.data)
+
+      const gastoAntes = gastoDaCategoria(transacoes, nova.categoria, mesNova)
+
+      const alerta = nova.tipo === "saida" && limite
+        ? mensagemAlerta(nova.categoria, gastoAntes, arredondar(gastoAntes + nova.valor), limite)
+        : null
+
+      const base = form.repetir ? "Transação adicionada e repetida todo mês" : "Transação adicionada"
+
+      mostrarAviso(
+        alerta ? `${base}. ${alerta}` : base,
+        alerta && alerta.includes("estourado") ? "erro" : "info"
+      )
     }
 
     setForm(FORM_VAZIO)
@@ -336,7 +408,8 @@ function App() {
       categoria: categoriaCompativel(transacao.categoria, transacao.tipo)
         ? transacao.categoria
         : "",
-      data: paraInputData(transacao.data)
+      data: paraInputData(transacao.data),
+      repetir: false
     })
 
     setEditandoId(id)
@@ -380,10 +453,54 @@ function App() {
     mostrarAviso("Arquivo exportado")
   }
 
+  // Orçamentos e lançamentos mensais
+
+  function definirOrcamento(categoria, valor) {
+    setOrcamentos((atuais) => {
+      const novo = { ...atuais }
+
+      if (valor === null) {
+        delete novo[categoria]
+      } else {
+        novo[categoria] = arredondar(valor)
+      }
+
+      return novo
+    })
+
+    mostrarAviso(valor === null ? "Limite removido" : "Limite salvo")
+  }
+
+  function excluirRecorrente(id) {
+
+    const indice = recorrentes.findIndex((r) => r.id === id)
+
+    if (indice === -1) {
+      return
+    }
+
+    const removida = recorrentes[indice]
+
+    setRecorrentes((atuais) => atuais.filter((r) => r.id !== id))
+
+    // As transações já lançadas ficam; só deixa de lançar as próximas
+    mostrarAviso("Lançamento mensal removido", "info", () => {
+      setRecorrentes((atuais) => {
+        if (atuais.some((r) => r.id === removida.id)) {
+          return atuais
+        }
+
+        const copia = [...atuais]
+        copia.splice(Math.min(indice, copia.length), 0, removida)
+        return copia
+      })
+    })
+  }
+
   // Backup
 
   function exportarBackup() {
-    baixarBackup({ transacoes, caixinhas, cdi, pctCdi })
+    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes })
     mostrarAviso("Backup exportado")
   }
 
@@ -401,7 +518,19 @@ function App() {
       const novasCaixinhas = backup.caixinhas
         .filter((c) => !idsCaixinhas.has(c.id)).length
 
-      if (novasTransacoes === 0 && novasCaixinhas === 0) {
+      const idsRecorrentes = new Set(recorrentes.map((r) => r.id))
+
+      const novasRecorrentes = backup.recorrentes
+        .filter((r) => !idsRecorrentes.has(r.id)).length
+
+      // Limites só entram nas categorias que ainda não têm
+      const novosLimites = Object.keys(backup.orcamentos)
+        .filter((c) => !(c in orcamentos)).length
+
+      if (
+        novasTransacoes === 0 && novasCaixinhas === 0 &&
+        novasRecorrentes === 0 && novosLimites === 0
+      ) {
         mostrarAviso("Nada novo no backup: seus dados já estão aqui")
         return
       }
@@ -409,6 +538,8 @@ function App() {
       // Só entra o que falta; o que já existe fica como está
       setTransacoes((atuais) => unirPorId(atuais, backup.transacoes))
       setCaixinhas((atuais) => unirPorId(atuais, backup.caixinhas))
+      setRecorrentes((atuais) => unirPorId(atuais, backup.recorrentes))
+      setOrcamentos((atuais) => ({ ...backup.orcamentos, ...atuais }))
 
       mostrarAviso(
         "Backup importado: " +
@@ -767,11 +898,24 @@ function App() {
 
           {aba === "graficos" && (
             <>
-              <h2 className="titulo-secao">Gastos por categoria</h2>
+              <h2 className="titulo-secao">Comparação entre meses</h2>
+
+              <ComparacaoMeses transacoes={transacoes} />
+
+              <h2 className="titulo-secao titulo-espaco">Gastos por categoria</h2>
 
               <Categorias
                 gastosPorCategoria={gastos}
                 totalGastos={totalGastos}
+              />
+
+              <h2 className="titulo-secao titulo-espaco">Orçamento</h2>
+
+              <Orcamentos
+                transacoes={transacoes}
+                orcamentos={orcamentos}
+                mes={mesOrcamento}
+                onDefinir={definirOrcamento}
               />
             </>
           )}
@@ -794,13 +938,20 @@ function App() {
           )}
 
           {aba === "nova" && (
-            <FormularioTransacao
-              form={form}
-              editando={editandoId !== null}
-              onAlterar={alterarCampo}
-              onSalvar={salvarTransacao}
-              onCancelar={cancelarEdicao}
-            />
+            <>
+              <FormularioTransacao
+                form={form}
+                editando={editandoId !== null}
+                onAlterar={alterarCampo}
+                onSalvar={salvarTransacao}
+                onCancelar={cancelarEdicao}
+              />
+
+              <Recorrentes
+                recorrentes={recorrentes}
+                onExcluir={excluirRecorrente}
+              />
+            </>
           )}
 
         </div>

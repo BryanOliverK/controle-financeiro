@@ -13,6 +13,7 @@ const TIPOS = [
 function FormularioTransacao({ form, editando, onAlterar, onSalvar, onCancelar }) {
 
   const categorias = categoriasPara(form.tipo)
+  const diaDoMes = Number((form.data || hojeLocal()).split("-")[2])
 
   function enviar(evento) {
     evento.preventDefault()
@@ -97,6 +98,30 @@ function FormularioTransacao({ form, editando, onAlterar, onSalvar, onCancelar }
             ))}
           </div>
         </div>
+
+        {!editando && (
+          <label className="campo-repetir">
+            <input
+              type="checkbox"
+              checked={form.repetir}
+              onChange={(e) => onAlterar("repetir", e.target.checked)}
+            />
+
+            <span className="repetir-icone">
+              <Icone nome="repetir" tamanho={18} />
+            </span>
+
+            <span className="repetir-texto">
+              <strong>Repetir todo mês</strong>
+              <small>
+                Lança sozinho todo dia {diaDoMes}
+                {diaDoMes > 28 && " (no último dia dos meses mais curtos)"}
+              </small>
+            </span>
+
+            <span className="repetir-chave" aria-hidden="true" />
+          </label>
+        )}
 
         <input
           type="date"

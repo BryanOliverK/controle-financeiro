@@ -1,0 +1,451 @@
+/* ========================================= */
+/* RECURSOS NOVOS: comparação, orçamento,    */
+/* lançamentos mensais                       */
+/* ========================================= */
+
+.titulo-espaco {
+  margin-top: 32px;
+}
+
+/* ----- Repetir todo mês (formulário) ----- */
+
+.campo-repetir {
+  grid-column: 1 / -1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.campo-repetir:hover {
+  border-color: var(--brand);
+}
+
+/* O checkbox de verdade fica escondido; a chave ao lado faz o papel dele */
+
+.formulario .campo-repetir input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.repetir-icone {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background-color: var(--brand-soft);
+  color: var(--brand);
+}
+
+.repetir-texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.repetir-texto strong {
+  font-size: 14px;
+}
+
+.repetir-texto small {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.repetir-chave {
+  position: relative;
+  flex-shrink: 0;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background-color: var(--border);
+  transition: background-color 0.25s ease;
+}
+
+.repetir-chave::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.campo-repetir input:checked ~ .repetir-chave {
+  background-color: var(--brand);
+}
+
+.campo-repetir input:checked ~ .repetir-chave::after {
+  transform: translateX(18px);
+}
+
+.campo-repetir input:focus-visible ~ .repetir-chave {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ----- Lançamentos mensais (lista) ----- */
+
+.rec-card {
+  margin-top: 8px;
+  padding: 20px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.rec-card .titulo-secao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.rec-linha {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.rec-linha:first-of-type {
+  border-top: none;
+}
+
+.rec-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.rec-info strong {
+  color: var(--text);
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+/* ----- Ícone de categoria (orçamento e lançamentos) ----- */
+
+.orc-icone {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background-color: color-mix(in srgb, var(--cor) 16%, transparent);
+  color: var(--cor);
+}
+
+/* ----- Comparação entre meses ----- */
+
+.cmp-card,
+.orc-card {
+  padding: 22px 24px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.cmp-topo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 18px;
+}
+
+.cmp-topo h3,
+.orc-topo h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.cmp-legenda {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.cmp-legenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cmp-ponto {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.cmp-ponto.entrada,
+.cmp-barra.entrada {
+  background-color: var(--entrada);
+}
+
+.cmp-ponto.saida,
+.cmp-barra.saida {
+  background-color: var(--saida);
+}
+
+.cmp-grade {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cmp-mes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cmp-barras {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 150px;
+}
+
+.cmp-barra {
+  width: 100%;
+  max-width: 22px;
+  border-radius: 6px 6px 2px 2px;
+  transform-origin: bottom;
+  animation: cmp-crescer 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cmp-rotulo {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--text-muted);
+}
+
+.cmp-rotulo.atual {
+  color: var(--brand);
+  font-weight: 800;
+}
+
+.cmp-resumo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.cmp-resumo > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cmp-resumo-titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.cmp-resumo strong {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmp-variacao {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.cmp-variacao.bom {
+  color: var(--entrada);
+}
+
+.cmp-variacao.ruim {
+  color: var(--saida);
+}
+
+@keyframes cmp-crescer {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* ----- Orçamento ----- */
+
+.orc-topo {
+  margin-bottom: 8px;
+}
+
+.orc-topo p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.orc-linha {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.orc-topo + .orc-linha {
+  border-top: none;
+}
+
+.orc-meio {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.orc-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+  font-size: 14px;
+}
+
+.orc-valores {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.orc-barra {
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--border);
+  overflow: hidden;
+}
+
+.orc-progresso {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--entrada);
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s ease;
+}
+
+.orc-linha.alerta .orc-progresso {
+  background-color: #e0a100;
+}
+
+.orc-linha.estourado .orc-progresso {
+  background-color: var(--saida);
+}
+
+.orc-situacao {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.orc-linha.estourado .orc-situacao {
+  color: var(--saida);
+  font-weight: 600;
+}
+
+.orc-linha > input {
+  flex-shrink: 0;
+  width: 96px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.orc-linha > input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+/* Modo privado: valores em dinheiro borrados */
+
+.privado .cmp-valor {
+  filter: blur(9px);
+  user-select: none;
+}
+
+@media (max-width: 700px) {
+  .cmp-card,
+  .orc-card {
+    padding: 18px 16px;
+  }
+
+  .cmp-barras {
+    height: 120px;
+  }
+
+  .cmp-resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .orc-linha {
+    flex-wrap: wrap;
+  }
+
+  .orc-linha > input {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmp-barra {
+    animation: none;
+  }
+}

@@ -1,10 +1,11 @@
 import { hojeLocal } from "./formatar"
+import { limparOrcamentos } from "./orcamentos"
 
 const VERSAO = 1
 const TAMANHO_MAXIMO = 5 * 1024 * 1024 // 5 MB: um backup de verdade é bem menor
 
 // Baixa um arquivo .json com todos os dados do app
-export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi }) {
+export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes }) {
   const conteudo = JSON.stringify(
     {
       app: "controle-financeiro",
@@ -13,7 +14,9 @@ export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi }) {
       transacoes,
       caixinhas,
       cdi,
-      pctCdi
+      pctCdi,
+      orcamentos,
+      recorrentes
     },
     null,
     2
@@ -58,6 +61,20 @@ function caixinhaValida(c) {
   )
 }
 
+function recorrenteValida(r) {
+  return (
+    r !== null &&
+    typeof r === "object" &&
+    r.id !== undefined &&
+    r.id !== null &&
+    typeof r.descricao === "string" &&
+    Number.isFinite(r.valor) &&
+    (r.tipo === "entrada" || r.tipo === "saida") &&
+    Number.isInteger(r.dia) && r.dia >= 1 && r.dia <= 31 &&
+    typeof r.proximoMes === "string" && /^\d{4}-\d{2}$/.test(r.proximoMes)
+  )
+}
+
 // Fica só com os campos que o app conhece (nada de campo estranho vindo do arquivo)
 function limparTransacao(t) {
   return {
@@ -67,6 +84,18 @@ function limparTransacao(t) {
     tipo: t.tipo,
     categoria: typeof t.categoria === "string" ? t.categoria : "",
     data: t.data
+  }
+}
+
+function limparRecorrente(r) {
+  return {
+    id: r.id,
+    descricao: r.descricao,
+    valor: r.valor,
+    tipo: r.tipo,
+    categoria: typeof r.categoria === "string" ? r.categoria : "",
+    dia: r.dia,
+    proximoMes: r.proximoMes
   }
 }
 
@@ -115,8 +144,15 @@ export async function lerBackup(arquivo) {
     throw new Error("O backup tem dados em um formato inesperado.")
   }
 
+  // Orçamentos e lançamentos mensais são opcionais (backups antigos não têm)
+  const recorrentes = Array.isArray(dados.recorrentes)
+    ? dados.recorrentes.filter(recorrenteValida).map(limparRecorrente)
+    : []
+
   return {
     transacoes: dados.transacoes.map(limparTransacao),
-    caixinhas: dados.caixinhas.map(limparCaixinha)
+    caixinhas: dados.caixinhas.map(limparCaixinha),
+    orcamentos: limparOrcamentos(dados.orcamentos),
+    recorrentes
   }
 }
