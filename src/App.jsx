@@ -86,6 +86,7 @@ function App() {
 
   const [form, setForm] = useState(FORM_VAZIO)
   const [editandoId, setEditandoId] = useState(null)
+  const [erroSincronia, setErroSincronia] = useState("")
 
   // Dados (guardados no aparelho; a sincronização com a nuvem vem mais abaixo)
 
@@ -129,9 +130,20 @@ function App() {
 
   const referencia = doc(db, "usuarios", usuario.uid)
 
-  return onSnapshot(referencia, (snap) => {
+  // includeMetadataChanges: avisa também quando o Firestore passa do cache
+  // para a resposta do servidor (sem isso, uma conta sem documento ficaria
+  // esperando para sempre depois de uma resposta só do cache)
+  return onSnapshot(referencia, { includeMetadataChanges: true }, (snap) => {
     // Eco das nossas próprias gravações: ignora
     if (snap.metadata.hasPendingWrites) {
+      return
+    }
+
+    // Resposta só do cache e sem documento = o Firestore acha que está sem
+    // conexão. Ainda não dá para saber se a conta é nova: espera o servidor.
+    // (Tratar como "conta nova" poderia subir dados locais vazios por cima
+    // dos da nuvem.)
+    if (!snap.exists() && snap.metadata.fromCache) {
       return
     }
 
@@ -188,6 +200,13 @@ function App() {
 
     localStorage.setItem(chaveMigracao, "1")
     setSincronizado(true)
+    setErroSincronia("")
+    }, (erro) => {
+      setErroSincronia(
+        erro.code === "permission-denied"
+          ? "O Firebase recusou o acesso aos seus dados. Confira as regras do Firestore."
+          : "Não foi possível carregar seus dados da nuvem. Confira sua conexão e tente de novo."
+      )
     })
   }, [usuario])
   // Envia as mudanças para a nuvem
@@ -740,7 +759,7 @@ function App() {
   }
 
   if (!sincronizado) {
-    return <TelaCarregando etapa={1} modoEscuro={modoEscuro} />
+    return <TelaCarregando etapa={1} modoEscuro={modoEscuro} erro={erroSincronia} />
   }
 
   // O que aparece na tela

@@ -153,6 +153,41 @@
   color: var(--text-muted);
 }
 
+/* Erro de sincronização */
+
+.carregando-erro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--saida) 40%, transparent);
+  border-radius: 12px;
+  background-color: color-mix(in srgb, var(--saida) 10%, transparent);
+}
+
+.carregando-erro p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--saida);
+}
+
+.carregando-erro button {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 10px;
+  background-color: var(--brand);
+  color: var(--on-brand);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* Animações */
 
 @keyframes carregando-pulso {

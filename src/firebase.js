@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app"
 import { getAuth, GoogleAuthProvider } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
+import { initializeFirestore } from "firebase/firestore"
 
 // Cole aqui a configuração que o Firebase mostra ao registrar o app web
 // (Configurações do projeto > Seus apps > Configuração do SDK).
@@ -22,5 +22,9 @@ export const auth = getAuth(app)
 export const provider = new GoogleAuthProvider()
 provider.setCustomParameters({ prompt: "select_account" })
 
-// Guarda uma cópia local, então o app continua abrindo sem internet
-export const db = getFirestore(app)
+// Se a conexão padrão (WebChannel) for bloqueada por rede, extensão ou
+// firewall, o Firestore troca sozinho para long polling em vez de ficar
+// "offline" para sempre.
+export const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true
+})

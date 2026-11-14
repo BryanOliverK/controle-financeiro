@@ -10,7 +10,7 @@ const SEGUNDOS_ATE_AVISO = 8
 
 // Tela mostrada enquanto o app confere o login e baixa os dados da nuvem.
 // etapa: 0 = verificando login, 1 = sincronizando dados.
-function TelaCarregando({ etapa = 0, modoEscuro }) {
+function TelaCarregando({ etapa = 0, modoEscuro, erro = "" }) {
 
   const [demorando, setDemorando] = useState(false)
   const [largura, setLargura] = useState(0)
@@ -67,11 +67,20 @@ function TelaCarregando({ etapa = 0, modoEscuro }) {
           })}
         </ul>
 
-        <p className="carregando-dica">
-          {demorando
-            ? "Está demorando mais que o normal. Confira sua conexão e se algum bloqueador de anúncios está ativo para este site."
-            : "Só um instante, estamos buscando seus dados."}
-        </p>
+        {erro && (
+          <div className="carregando-erro" role="alert">
+            <p>{erro}</p>
+            <button onClick={() => window.location.reload()}>Tentar de novo</button>
+          </div>
+        )}
+
+        {!erro && (
+          <p className="carregando-dica">
+            {demorando
+              ? "Está demorando mais que o normal. Confira sua conexão e se algum bloqueador de anúncios está ativo para este site."
+              : "Só um instante, estamos buscando seus dados."}
+          </p>
+        )}
 
       </div>
     </div>
