@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar'
 import Resumo from './components/Resumo'
 import Transacao from './components/Transacao'
 import FormularioTransacao from './components/FormularioTransacao'
+import Avisos from './components/Avisos'
 import Cartoes from './components/Cartoes'
 import Compromissos from './components/Compromissos'
 import GerenciarCategorias from './components/GerenciarCategorias'
@@ -36,6 +37,7 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 
 import { useAviso } from './hooks/useAviso'
 import { useAtalhos } from './hooks/useAtalhos'
+import { useAtualizacao } from './hooks/useAtualizacao'
 import { useInstalar } from './hooks/useInstalar'
 import { useLocalStorage } from './hooks/useLocalStorage'
 
@@ -51,6 +53,7 @@ import { semCartao, semOculta } from './utils/historico'
 import { chaveFatura, infoCartao, limparCartoes, limparFaturasPagas, registrarCartoes } from './utils/cartoes'
 import { listarCompromissos } from './utils/compromissos'
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
+import { gerarAvisos, limparAvisosLidos } from './utils/avisos'
 import { calcularPrevisao } from './utils/previsao'
 import {
   agruparPorData,
@@ -99,6 +102,7 @@ const ABAS = [
   { id: "graficos", icone: "graficos", nome: "Gráficos" },
   { id: "caixinhas", icone: "caixinha", nome: "Caixinhas" },
   { id: "planejar", icone: "calendario", nome: "Planejar" },
+  { id: "avisos", icone: "sino", nome: "Avisos" },
   { id: "nova", icone: "adicionar", nome: "Adicionar" }
 ]
 
@@ -131,6 +135,7 @@ function App() {
   const [categoriasExtras, setCategoriasExtras] = useLocalStorage("categoriasExtras", [])
   const [cartoes, setCartoes] = useLocalStorage("cartoes", [])
   const [faturasPagas, setFaturasPagas] = useLocalStorage("faturasPagas", [])
+  const [avisosLidos, setAvisosLidos] = useLocalStorage("avisosLidos", [])
   const [modoEscuro, setModoEscuro] = useLocalStorage("modoEscuro", false)
   const [boasVindasVistas, setBoasVindasVistas] = useLocalStorage("boasVindasVistas", false)
 
@@ -140,6 +145,7 @@ function App() {
 
   const { aviso, mostrarAviso, fecharAviso } = useAviso()
   const { podeInstalar, instalar } = useInstalar()
+  const { atualizacaoDisponivel, atualizar } = useAtualizacao()
 
   // ===== Firebase: login e sincronização (código original, sem alterações) =====
 
@@ -209,6 +215,7 @@ function App() {
     const categoriasRemoto = limparCategoriasExtras(dados.categoriasExtras)
     const cartoesRemoto = limparCartoes(dados.cartoes)
     const pagasRemoto = limparFaturasPagas(dados.faturasPagas)
+    const lidosRemoto = limparAvisosLidos(dados.avisosLidos)
 
     const chave = JSON.stringify({
       transacoes: remotasT,
@@ -219,7 +226,8 @@ function App() {
       recorrentes: recorrentesRemoto,
       categoriasExtras: categoriasRemoto,
       cartoes: cartoesRemoto,
-      faturasPagas: pagasRemoto
+      faturasPagas: pagasRemoto,
+      avisosLidos: lidosRemoto
     })
 
     if (chave !== ultimoRemoto.current) {
@@ -255,6 +263,10 @@ function App() {
       setFaturasPagas((locais) =>
         primeiraVez ? limparFaturasPagas([...pagasRemoto, ...locais]) : pagasRemoto
       )
+
+      setAvisosLidos((locais) =>
+        primeiraVez ? limparAvisosLidos([...lidosRemoto, ...locais]) : lidosRemoto
+      )
     }
 
     localStorage.setItem(chaveMigracao, "1")
@@ -284,7 +296,8 @@ function App() {
       recorrentes,
       categoriasExtras,
       cartoes,
-      faturasPagas
+      faturasPagas,
+      avisosLidos
     }))
 
     const chave = JSON.stringify(dados)
@@ -298,7 +311,7 @@ function App() {
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
       .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
 
-  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas])
+  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos])
 
   // ===== Fim do código do Firebase =====
 
@@ -347,6 +360,18 @@ function App() {
     () => listarCompromissos({ transacoes: visiveis, recorrentes, cartoes, faturasPagas }),
     [visiveis, recorrentes, cartoes, faturasPagas]
   )
+
+  // Avisos (vencimentos, lembretes, orçamento, novidades) e quantos faltam ler
+  const avisos = useMemo(
+    () => gerarAvisos({ transacoes: visiveis, recorrentes, cartoes, faturasPagas, orcamentos, previsao }),
+    [visiveis, recorrentes, cartoes, faturasPagas, orcamentos, previsao]
+  )
+
+  const lidosSet = useMemo(() => new Set(avisosLidos), [avisosLidos])
+
+  const naoLidos = avisos.filter((a) => !lidosSet.has(a.id)).length + (atualizacaoDisponivel ? 1 : 0)
+
+  const abasComSelo = ABAS.map((a) => (a.id === "avisos" ? { ...a, selo: naoLidos } : a))
 
   const mesAtivo =
     mes === "todos" || mesesDisponiveis.includes(mes) ? mes : "todos"
@@ -722,6 +747,12 @@ function App() {
     })
   }
 
+  // Avisos
+
+  function marcarAvisosLidos(ids) {
+    setAvisosLidos((atuais) => limparAvisosLidos([...atuais, ...ids]))
+  }
+
   // Cartões e faturas
 
   function salvarCartao({ id, nome, fechamento, vencimento, cor }) {
@@ -1089,7 +1120,7 @@ function App() {
     signOut(auth).then(() => {
 
       // Limpa a cópia local para ninguém ver seus dados neste aparelho
-      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi", "orcamentos", "recorrentes", "categoriasExtras", "cartoes", "faturasPagas"]
+      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi", "orcamentos", "recorrentes", "categoriasExtras", "cartoes", "faturasPagas", "avisosLidos"]
         .forEach((chave) => localStorage.removeItem(chave))
 
       window.location.reload()
@@ -1110,6 +1141,7 @@ function App() {
       t: () => mudarAba("transacoes"),
       g: () => mudarAba("graficos"),
       c: () => mudarAba("caixinhas"),
+      a: () => mudarAba("avisos"),
       p: () => setPrivado(!privado),
       d: () => setModoEscuro(!modoEscuro),
       "?": () => setAjudaAberta(true)
@@ -1149,7 +1181,7 @@ function App() {
   return (
     <div className={classesApp}>
 
-      <Sidebar abas={ABAS} aba={aba} onMudar={mudarAba} />
+      <Sidebar abas={abasComSelo} aba={aba} onMudar={mudarAba} />
 
       <main className="conteudo">
 
@@ -1198,7 +1230,14 @@ function App() {
           </div>
         </Header>
 
-        {aba !== "nova" && aba !== "caixinhas" && mesesDisponiveis.length > 0 && (
+        {atualizacaoDisponivel && (
+          <div className="banner-atualizacao" role="status">
+            <span>Nova versão do app disponível.</span>
+            <button type="button" onClick={atualizar}>Atualizar</button>
+          </div>
+        )}
+
+        {!["nova", "caixinhas", "planejar", "avisos"].includes(aba) && mesesDisponiveis.length > 0 && (
           <div className="barra-mes">
             <select
               value={mesAtivo}
@@ -1366,6 +1405,17 @@ function App() {
                 onExcluir={excluirCaixinha}
               />
             </>
+          )}
+
+          {aba === "avisos" && (
+            <Avisos
+              avisos={avisos}
+              lidos={lidosSet}
+              atualizacaoDisponivel={atualizacaoDisponivel}
+              onAtualizar={atualizar}
+              onMarcar={marcarAvisosLidos}
+              onAbrir={mudarAba}
+            />
           )}
 
           {aba === "planejar" && (

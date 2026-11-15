@@ -7,6 +7,7 @@ function Sidebar({ abas, aba, onMudar }) {
   const [aberto, setAberto] = useState(false)
 
   const abaAtual = abas.find((item) => item.id === aba) ?? abas[0]
+  const totalSelos = abas.reduce((soma, item) => soma + (item.selo || 0), 0)
 
   return (
     <aside className={aberto ? "sidebar aberto" : "sidebar"}>
@@ -23,6 +24,7 @@ function Sidebar({ abas, aba, onMudar }) {
         aria-label={aberto ? "Fechar menu" : "Abrir menu"}
       >
         <span className="sidebar-icone" key={aba}><Icone nome={abaAtual.icone} tamanho={22} /></span>
+        {totalSelos > 0 && !aberto && <span className="menu-ponto" aria-label="Há avisos novos" />}
         <span className="menu-seta"><Icone nome="chevronBaixo" tamanho={16} /></span>
       </button>
 
@@ -38,7 +40,15 @@ function Sidebar({ abas, aba, onMudar }) {
               }}
               aria-current={aba === item.id ? "page" : undefined}
             >
-              <span className="sidebar-icone"><Icone nome={item.icone} tamanho={22} /></span>
+              <span className="sidebar-icone">
+                <Icone nome={item.icone} tamanho={22} />
+
+                {item.selo > 0 && (
+                  <span className="sidebar-selo" aria-label={`${item.selo} não lidos`}>
+                    {item.selo > 9 ? "9+" : item.selo}
+                  </span>
+                )}
+              </span>
               <span className="sidebar-nome">{item.nome}</span>
             </button>
           ))}

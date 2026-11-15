@@ -7,6 +7,7 @@ export const ATALHOS = [
   { tecla: "T", texto: "Ir para Transações" },
   { tecla: "G", texto: "Ir para Gráficos" },
   { tecla: "C", texto: "Ir para Caixinhas" },
+  { tecla: "A", texto: "Ir para Avisos" },
   { tecla: "P", texto: "Mostrar ou ocultar valores" },
   { tecla: "D", texto: "Modo escuro ou claro" },
   { tecla: "?", texto: "Abrir esta ajuda" },
