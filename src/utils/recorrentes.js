@@ -27,8 +27,9 @@ function dataDoMes(chave, dia) {
 
 // Cria o modelo a partir da transação recém-salva (a primeira já foi lançada,
 // então a próxima é no mês seguinte).
-export function criarRecorrente({ descricao, valor, tipo, categoria }, dataIso) {
+export function criarRecorrente({ descricao, valor, tipo, categoria, cartaoId }, dataIso) {
   return {
+    ...(cartaoId ? { cartaoId } : {}),
     id: novoId(),
     descricao,
     valor,
@@ -65,6 +66,7 @@ export function gerarPendentes(recorrentes, hoje = new Date()) {
         valor: r.valor,
         tipo: r.tipo,
         categoria: r.categoria,
+        ...(r.cartaoId ? { cartaoId: r.cartaoId } : {}),
         data: data.toISOString()
       })
 

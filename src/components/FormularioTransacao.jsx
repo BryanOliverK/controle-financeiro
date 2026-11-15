@@ -11,7 +11,7 @@ const TIPOS = [
 
 // Formulário de nova transação / edição. Os campos ficam no App (prop "form"),
 // assim o que foi digitado não se perde ao trocar de aba.
-function FormularioTransacao({ form, editando, onAlterar, onSalvar, onCancelar }) {
+function FormularioTransacao({ form, editando, cartoes = [], onAlterar, onSalvar, onCancelar }) {
 
   const categorias = categoriasPara(form.tipo)
   const diaDoMes = Number((form.data || hojeLocal()).split("-")[2])
@@ -108,6 +108,26 @@ function FormularioTransacao({ form, editando, onAlterar, onSalvar, onCancelar }
             ))}
           </div>
         </div>
+
+        {form.tipo === "saida" && cartoes.length > 0 && (
+          <div className="campo-cartao">
+            <label className="campo-rotulo" htmlFor="campo-cartao">Pagar com</label>
+
+            <select
+              id="campo-cartao"
+              value={form.cartaoId}
+              onChange={(e) => onAlterar("cartaoId", e.target.value)}
+            >
+              <option value="">À vista (dinheiro, Pix ou débito)</option>
+
+              {cartoes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  Cartão {c.nome} (fecha dia {c.fechamento}, vence dia {c.vencimento})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {!editando && (
           <label className="campo-repetir">

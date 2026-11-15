@@ -82,3 +82,10 @@ export function agruparPorMes(transacoes, opcoes) {
       itens: itens.sort((a, b) => new Date(b.data) - new Date(a.data))
     }))
 }
+
+// Cópia sem o vínculo com cartão (usada quando o cartão é excluído)
+export function semCartao(item) {
+  const copia = { ...item }
+  delete copia.cartaoId
+  return copia
+}

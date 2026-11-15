@@ -5,7 +5,10 @@ import Sidebar from './components/Sidebar'
 import Resumo from './components/Resumo'
 import Transacao from './components/Transacao'
 import FormularioTransacao from './components/FormularioTransacao'
+import Cartoes from './components/Cartoes'
+import Compromissos from './components/Compromissos'
 import GerenciarCategorias from './components/GerenciarCategorias'
+import Previsao from './components/Previsao'
 import LimparHistorico from './components/LimparHistorico'
 import Categorias from './components/Categorias'
 import Caixinhas from './components/Caixinhas'
@@ -44,8 +47,11 @@ import {
   registrarCategorias,
   todasCategorias
 } from './utils/categorias'
-import { semOculta } from './utils/historico'
+import { semCartao, semOculta } from './utils/historico'
+import { chaveFatura, infoCartao, limparCartoes, limparFaturasPagas, registrarCartoes } from './utils/cartoes'
+import { listarCompromissos } from './utils/compromissos'
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
+import { calcularPrevisao } from './utils/previsao'
 import {
   agruparPorData,
   calcularResumo,
@@ -84,7 +90,7 @@ import './recursos.css'
 // data vazia = hoje (o formulário mostra a data de hoje e resolve ao salvar)
 const FORM_VAZIO = {
   descricao: "", valor: "", tipo: "", categoria: "", data: "",
-  repetir: false, parcelar: false, parcelas: "2"
+  repetir: false, parcelar: false, parcelas: "2", cartaoId: ""
 }
 
 const ABAS = [
@@ -92,6 +98,7 @@ const ABAS = [
   { id: "transacoes", icone: "transacoes", nome: "Transações" },
   { id: "graficos", icone: "graficos", nome: "Gráficos" },
   { id: "caixinhas", icone: "caixinha", nome: "Caixinhas" },
+  { id: "planejar", icone: "calendario", nome: "Planejar" },
   { id: "nova", icone: "adicionar", nome: "Adicionar" }
 ]
 
@@ -122,11 +129,14 @@ function App() {
   const [orcamentos, setOrcamentos] = useLocalStorage("orcamentos", {})
   const [recorrentes, setRecorrentes] = useLocalStorage("recorrentes", [])
   const [categoriasExtras, setCategoriasExtras] = useLocalStorage("categoriasExtras", [])
+  const [cartoes, setCartoes] = useLocalStorage("cartoes", [])
+  const [faturasPagas, setFaturasPagas] = useLocalStorage("faturasPagas", [])
   const [modoEscuro, setModoEscuro] = useLocalStorage("modoEscuro", false)
   const [boasVindasVistas, setBoasVindasVistas] = useLocalStorage("boasVindasVistas", false)
 
   // As categorias do usuário precisam estar registradas antes de a tela desenhar
   registrarCategorias(categoriasExtras)
+  registrarCartoes(cartoes)
 
   const { aviso, mostrarAviso, fecharAviso } = useAviso()
   const { podeInstalar, instalar } = useInstalar()
@@ -197,6 +207,8 @@ function App() {
     const orcamentosRemoto = limparOrcamentos(dados.orcamentos)
     const recorrentesRemoto = dados.recorrentes || []
     const categoriasRemoto = limparCategoriasExtras(dados.categoriasExtras)
+    const cartoesRemoto = limparCartoes(dados.cartoes)
+    const pagasRemoto = limparFaturasPagas(dados.faturasPagas)
 
     const chave = JSON.stringify({
       transacoes: remotasT,
@@ -205,7 +217,9 @@ function App() {
       pctCdi: pctRemoto,
       orcamentos: orcamentosRemoto,
       recorrentes: recorrentesRemoto,
-      categoriasExtras: categoriasRemoto
+      categoriasExtras: categoriasRemoto,
+      cartoes: cartoesRemoto,
+      faturasPagas: pagasRemoto
     })
 
     if (chave !== ultimoRemoto.current) {
@@ -232,6 +246,14 @@ function App() {
 
       setCategoriasExtras((locais) =>
         primeiraVez ? unirPorId(categoriasRemoto, locais) : categoriasRemoto
+      )
+
+      setCartoes((locais) =>
+        primeiraVez ? unirPorId(cartoesRemoto, locais) : cartoesRemoto
+      )
+
+      setFaturasPagas((locais) =>
+        primeiraVez ? limparFaturasPagas([...pagasRemoto, ...locais]) : pagasRemoto
       )
     }
 
@@ -260,7 +282,9 @@ function App() {
       pctCdi,
       orcamentos,
       recorrentes,
-      categoriasExtras
+      categoriasExtras,
+      cartoes,
+      faturasPagas
     }))
 
     const chave = JSON.stringify(dados)
@@ -274,7 +298,7 @@ function App() {
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
       .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
 
-  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras])
+  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas])
 
   // ===== Fim do código do Firebase =====
 
@@ -312,6 +336,17 @@ function App() {
   const visiveis = useMemo(() => transacoes.filter((t) => !t.oculta), [transacoes])
 
   const mesesDisponiveis = useMemo(() => listarMeses(visiveis), [visiveis])
+
+  // Previsão do mês e compromissos futuros
+  const previsao = useMemo(
+    () => calcularPrevisao(visiveis, recorrentes),
+    [visiveis, recorrentes]
+  )
+
+  const compromissos = useMemo(
+    () => listarCompromissos({ transacoes: visiveis, recorrentes, cartoes, faturasPagas }),
+    [visiveis, recorrentes, cartoes, faturasPagas]
+  )
 
   const mesAtivo =
     mes === "todos" || mesesDisponiveis.includes(mes) ? mes : "todos"
@@ -369,6 +404,12 @@ function App() {
     setForm((atual) => {
       const novo = { ...atual, [campo]: valor }
 
+      // Entrada não é paga com cartão
+      if (campo === "tipo" && valor === "entrada") {
+        novo.cartaoId = ""
+        novo.parcelar = false
+      }
+
       // Trocou o tipo e a categoria escolhida não combina mais: limpa
       if (
         campo === "tipo" &&
@@ -408,7 +449,7 @@ function App() {
           return t
         }
 
-        return {
+        const atualizada = {
           ...t,
           descricao: form.descricao.trim(),
           valor: valorNumerico,
@@ -416,6 +457,14 @@ function App() {
           categoria: form.categoria,
           data: dataParaIso(form.data, t.data)
         }
+
+        if (form.tipo === "saida" && form.cartaoId) {
+          atualizada.cartaoId = form.cartaoId
+        } else {
+          delete atualizada.cartaoId
+        }
+
+        return atualizada
       }))
 
       setEditandoId(null)
@@ -429,6 +478,7 @@ function App() {
         valor: valorNumerico,
         tipo: form.tipo,
         categoria: form.categoria,
+        ...(form.tipo === "saida" && form.cartaoId ? { cartaoId: form.cartaoId } : {}),
         data: dataParaIso(form.data)
       }
 
@@ -488,7 +538,8 @@ function App() {
       data: paraInputData(transacao.data),
       repetir: false,
       parcelar: false,
-      parcelas: "2"
+      parcelas: "2",
+      cartaoId: transacao.cartaoId && infoCartao(transacao.cartaoId) ? transacao.cartaoId : ""
     })
 
     setEditandoId(id)
@@ -671,6 +722,46 @@ function App() {
     })
   }
 
+  // Cartões e faturas
+
+  function salvarCartao({ id, nome, fechamento, vencimento, cor }) {
+
+    if (id) {
+      setCartoes((atuais) =>
+        atuais.map((c) => (c.id === id ? { ...c, nome, fechamento, vencimento, cor } : c))
+      )
+      mostrarAviso("Cartão atualizado")
+      return
+    }
+
+    setCartoes((atuais) => [...atuais, { id: novoId(), nome, fechamento, vencimento, cor }])
+    mostrarAviso("Cartão criado")
+  }
+
+  function excluirCartao(id) {
+
+    // As compras ficam no histórico, só deixam de pertencer ao cartão
+    setTransacoes((atuais) => atuais.map((t) => (t.cartaoId === id ? semCartao(t) : t)))
+    setRecorrentes((atuais) => atuais.map((r) => (r.cartaoId === id ? semCartao(r) : r)))
+    setFaturasPagas((atuais) => atuais.filter((x) => !x.startsWith(`${id}|`)))
+    setForm((atual) => (atual.cartaoId === id ? { ...atual, cartaoId: "" } : atual))
+    setCartoes((atuais) => atuais.filter((c) => c.id !== id))
+
+    mostrarAviso("Cartão excluído")
+  }
+
+  function alternarFaturaPaga(cartaoId, chave) {
+
+    const marca = chaveFatura(cartaoId, chave)
+    const estavaPaga = faturasPagas.includes(marca)
+
+    setFaturasPagas((atuais) =>
+      estavaPaga ? atuais.filter((x) => x !== marca) : [...atuais, marca]
+    )
+
+    mostrarAviso(estavaPaga ? "Pagamento desfeito" : "Fatura marcada como paga")
+  }
+
   // Categorias personalizadas
 
   function salvarCategoria({ id, nome, icone, cor }) {
@@ -727,7 +818,7 @@ function App() {
   // Backup
 
   function exportarBackup() {
-    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras })
+    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas })
     mostrarAviso("Backup exportado")
   }
 
@@ -759,9 +850,15 @@ function App() {
       const novasCategorias = backup.categoriasExtras
         .filter((c) => !idsCategorias.has(c.id)).length
 
+      const idsCartoes = new Set(cartoes.map((c) => c.id))
+
+      const novosCartoes = backup.cartoes
+        .filter((c) => !idsCartoes.has(c.id)).length
+
       if (
         novasTransacoes === 0 && novasCaixinhas === 0 &&
-        novasRecorrentes === 0 && novosLimites === 0 && novasCategorias === 0
+        novasRecorrentes === 0 && novosLimites === 0 &&
+        novasCategorias === 0 && novosCartoes === 0
       ) {
         mostrarAviso("Nada novo no backup: seus dados já estão aqui")
         return
@@ -773,6 +870,8 @@ function App() {
       setRecorrentes((atuais) => unirPorId(atuais, backup.recorrentes))
       setOrcamentos((atuais) => ({ ...backup.orcamentos, ...atuais }))
       setCategoriasExtras((atuais) => unirPorId(atuais, backup.categoriasExtras))
+      setCartoes((atuais) => unirPorId(atuais, backup.cartoes))
+      setFaturasPagas((atuais) => limparFaturasPagas([...atuais, ...backup.faturasPagas]))
 
       mostrarAviso(
         "Backup importado: " +
@@ -990,7 +1089,7 @@ function App() {
     signOut(auth).then(() => {
 
       // Limpa a cópia local para ninguém ver seus dados neste aparelho
-      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi", "orcamentos", "recorrentes", "categoriasExtras"]
+      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi", "orcamentos", "recorrentes", "categoriasExtras", "cartoes", "faturasPagas"]
         .forEach((chave) => localStorage.removeItem(chave))
 
       window.location.reload()
@@ -1131,6 +1230,8 @@ function App() {
                 saidas={saidas}
               />
 
+              {visiveis.length > 0 && <Previsao previsao={previsao} />}
+
               <div className="secao-topo">
                 <h2 className="titulo-secao">Últimas transações</h2>
                 <button
@@ -1267,11 +1368,27 @@ function App() {
             </>
           )}
 
+          {aba === "planejar" && (
+            <>
+              <Compromissos itens={compromissos} />
+
+              <Cartoes
+                cartoes={cartoes}
+                transacoes={visiveis}
+                faturasPagas={faturasPagas}
+                onSalvar={salvarCartao}
+                onExcluir={excluirCartao}
+                onAlternarPaga={alternarFaturaPaga}
+              />
+            </>
+          )}
+
           {aba === "nova" && (
             <>
               <FormularioTransacao
                 form={form}
                 editando={editandoId !== null}
+                cartoes={cartoes}
                 onAlterar={alterarCampo}
                 onSalvar={salvarTransacao}
                 onCancelar={cancelarEdicao}

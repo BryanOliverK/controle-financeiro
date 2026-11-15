@@ -254,6 +254,21 @@ const CAMINHOS = {
     </>
   ),
 
+  // Planejamento e avisos
+  calendario: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="3" />
+      <path d="M3 10h18" />
+      <path d="M8 3v4M16 3v4" />
+    </>
+  ),
+  sino: (
+    <>
+      <path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z" />
+      <path d="M10 20a2 2 0 0 0 4 0" />
+    </>
+  ),
+
   // Extras das caixinhas
   aviao: (
     <>

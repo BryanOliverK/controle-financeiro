@@ -1,4 +1,5 @@
 import { hojeLocal } from "./formatar"
+import { limparCartoes, limparFaturasPagas } from "./cartoes"
 import { limparCategoriasExtras } from "./categorias"
 import { limparOrcamentos } from "./orcamentos"
 import { limparParcela } from "./parcelas"
@@ -7,7 +8,7 @@ const VERSAO = 1
 const TAMANHO_MAXIMO = 5 * 1024 * 1024 // 5 MB: um backup de verdade é bem menor
 
 // Baixa um arquivo .json com todos os dados do app
-export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras }) {
+export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas }) {
   const conteudo = JSON.stringify(
     {
       app: "controle-financeiro",
@@ -19,7 +20,9 @@ export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, r
       pctCdi,
       orcamentos,
       recorrentes,
-      categoriasExtras
+      categoriasExtras,
+      cartoes,
+      faturasPagas
     },
     null,
     2
@@ -99,11 +102,16 @@ function limparTransacao(t) {
     limpa.oculta = true
   }
 
+  if (typeof t.cartaoId === "string" && t.cartaoId !== "") {
+    limpa.cartaoId = t.cartaoId
+  }
+
   return limpa
 }
 
 function limparRecorrente(r) {
   return {
+    ...(typeof r.cartaoId === "string" && r.cartaoId !== "" ? { cartaoId: r.cartaoId } : {}),
     id: r.id,
     descricao: r.descricao,
     valor: r.valor,
@@ -169,6 +177,8 @@ export async function lerBackup(arquivo) {
     caixinhas: dados.caixinhas.map(limparCaixinha),
     orcamentos: limparOrcamentos(dados.orcamentos),
     recorrentes,
-    categoriasExtras: limparCategoriasExtras(dados.categoriasExtras)
+    categoriasExtras: limparCategoriasExtras(dados.categoriasExtras),
+    cartoes: limparCartoes(dados.cartoes),
+    faturasPagas: limparFaturasPagas(dados.faturasPagas)
   }
 }
