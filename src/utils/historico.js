@@ -56,3 +56,29 @@ export function semOculta(t) {
   delete copia.oculta
   return copia
 }
+
+// Meses com as transações de cada um (mais novas primeiro):
+// [{ mes: "2026-11", ano: "2026", itens: [transação, ...] }]
+export function agruparPorMes(transacoes, opcoes) {
+  const grupos = new Map()
+
+  for (const t of transacoes) {
+    if (entra(t, opcoes)) {
+      const mes = chaveMes(t.data)
+
+      if (!grupos.has(mes)) {
+        grupos.set(mes, [])
+      }
+
+      grupos.get(mes).push(t)
+    }
+  }
+
+  return [...grupos.entries()]
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+    .map(([mes, itens]) => ({
+      mes,
+      ano: mes.slice(0, 4),
+      itens: itens.sort((a, b) => new Date(b.data) - new Date(a.data))
+    }))
+}

@@ -44,7 +44,7 @@ import {
   registrarCategorias,
   todasCategorias
 } from './utils/categorias'
-import { idsDosMeses, semOculta } from './utils/historico'
+import { semOculta } from './utils/historico'
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
 import {
   agruparPorData,
@@ -607,11 +607,11 @@ function App() {
     })
   }
 
-  // Limpar histórico (ocultar, restaurar e excluir por mês)
+  // Limpar histórico: ocultar, restaurar e excluir transações escolhidas (por id)
 
-  function ocultarMeses(meses, incluirCaixinha) {
+  function ocultarTransacoes(listaIds) {
 
-    const ids = new Set(idsDosMeses(transacoes, meses, { ocultas: false, incluirCaixinha }))
+    const ids = new Set(listaIds)
 
     if (ids.size === 0) {
       return
@@ -619,7 +619,7 @@ function App() {
 
     setTransacoes((atuais) => atuais.map((t) => (ids.has(t.id) ? { ...t, oculta: true } : t)))
 
-    mostrarAviso(`${contar(ids.size, "transação ocultada", "transações ocultadas")}`, "info", () => {
+    mostrarAviso(contar(ids.size, "transação ocultada", "transações ocultadas"), "info", () => {
       setTransacoes((atuais) => atuais.map((t) => {
         if (!ids.has(t.id)) {
           return t
@@ -632,9 +632,9 @@ function App() {
     })
   }
 
-  function restaurarMeses(meses) {
+  function restaurarTransacoes(listaIds) {
 
-    const ids = new Set(idsDosMeses(transacoes, meses, { ocultas: true, incluirCaixinha: true }))
+    const ids = new Set(listaIds)
 
     if (ids.size === 0) {
       return
@@ -651,19 +651,21 @@ function App() {
     mostrarAviso(contar(ids.size, "transação restaurada", "transações restauradas"))
   }
 
-  function excluirOcultasDeVez(meses) {
+  function excluirTransacoesDeVez(listaIds) {
 
-    const ids = new Set(idsDosMeses(transacoes, meses, { ocultas: true, incluirCaixinha: true }))
+    // Só apaga de vez o que já está oculto
+    const ids = new Set(listaIds)
+    const removidas = transacoes.filter((t) => ids.has(t.id) && t.oculta)
 
-    if (ids.size === 0) {
+    if (removidas.length === 0) {
       return
     }
 
-    const removidas = transacoes.filter((t) => ids.has(t.id))
+    const idsRemovidas = new Set(removidas.map((t) => t.id))
 
-    setTransacoes((atuais) => atuais.filter((t) => !ids.has(t.id)))
+    setTransacoes((atuais) => atuais.filter((t) => !idsRemovidas.has(t.id)))
 
-    mostrarAviso(contar(ids.size, "transação excluída", "transações excluídas"), "info", () => {
+    mostrarAviso(contar(removidas.length, "transação excluída", "transações excluídas"), "info", () => {
       setTransacoes((atuais) => unirPorId(atuais, removidas))
       fecharAviso()
     })
@@ -1298,9 +1300,9 @@ function App() {
       {limparAberto && (
         <LimparHistorico
           transacoes={transacoes}
-          onOcultar={ocultarMeses}
-          onRestaurar={restaurarMeses}
-          onExcluirDeVez={excluirOcultasDeVez}
+          onOcultar={ocultarTransacoes}
+          onRestaurar={restaurarTransacoes}
+          onExcluirDeVez={excluirTransacoesDeVez}
           onFechar={() => setLimparAberto(false)}
         />
       )}

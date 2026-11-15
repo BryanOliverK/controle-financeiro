@@ -893,16 +893,85 @@
 .lh-mes {
   display: flex;
   align-items: center;
-  gap: 0;
+  justify-content: space-between;
+  gap: 8px;
   padding: 7px 0;
   font-size: 14px;
+}
+
+.lh-mes label {
+  display: flex;
+  align-items: center;
+  flex: 1;
   cursor: pointer;
 }
 
-.lh-mes small {
-  margin-left: auto;
+.lh-abrir {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px 6px 10px;
+  border: none;
+  background: none;
   color: var(--text-muted);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.lh-abrir small {
   font-size: 12px;
+}
+
+.lh-itens {
+  margin: 0 0 6px;
+  padding: 4px 0 4px 26px;
+  list-style: none;
+  border-left: 2px solid var(--border);
+  margin-left: 8px;
+}
+
+.lh-itens label {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 6px 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.lh-itens input[type="checkbox"],
+.lh-mes input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0 8px 0 0;
+  accent-color: var(--brand);
+  flex: none;
+}
+
+.lh-item-texto {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.lh-item-nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.lh-item-texto small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.lh-valor {
+  margin-left: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .lh-opcao {
