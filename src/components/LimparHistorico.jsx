@@ -67,6 +67,11 @@ function LimparHistorico({ transacoes, onOcultar, onRestaurar, onExcluirDeVez })
     [transacoes]
   )
 
+  const temCaixinha = useMemo(
+    () => transacoes.some((t) => !t.oculta && t.categoria === "caixinha"),
+    [transacoes]
+  )
+
   // Só conta o que ainda existe (um mês some da lista depois de ocultado)
   const escolhidosVisiveis = mesesVisiveis.filter((m) => marcadosVisiveis.has(m.mes))
   const escolhidosOcultos = mesesOcultos.filter((m) => marcadosOcultos.has(m.mes))
@@ -139,42 +144,48 @@ function LimparHistorico({ transacoes, onOcultar, onRestaurar, onExcluirDeVez })
           </p>
 
           {mesesVisiveis.length === 0 ? (
-            <p className="lh-vazio">Não há transações para ocultar.</p>
+            <p className="lh-vazio">
+              {incluirCaixinha || !temCaixinha
+                ? "Não há transações para ocultar."
+                : "Só restam movimentações de caixinha, que ficam de fora por padrão. Marque a opção abaixo para incluí-las."}
+            </p>
           ) : (
-            <>
-              <ListaMeses
-                meses={mesesVisiveis}
-                marcados={marcadosVisiveis}
-                onAlternar={(mes) => alternar(setMarcadosVisiveis, mes)}
-                onAlternarAno={(doAno, marcar) => alternarAno(setMarcadosVisiveis, doAno, marcar)}
+            <ListaMeses
+              meses={mesesVisiveis}
+              marcados={marcadosVisiveis}
+              onAlternar={(mes) => alternar(setMarcadosVisiveis, mes)}
+              onAlternarAno={(doAno, marcar) => alternarAno(setMarcadosVisiveis, doAno, marcar)}
+            />
+          )}
+
+          {(mesesVisiveis.length > 0 || temCaixinha) && (
+            <label className="lh-opcao">
+              <input
+                type="checkbox"
+                checked={incluirCaixinha}
+                onChange={(e) => {
+                  setIncluirCaixinha(e.target.checked)
+                  setMarcadosVisiveis(new Set())
+                }}
               />
+              <span>
+                Incluir movimentações de caixinhas
+                <small>Não recomendado: muda o seu saldo.</small>
+              </span>
+            </label>
+          )}
 
-              <label className="lh-opcao">
-                <input
-                  type="checkbox"
-                  checked={incluirCaixinha}
-                  onChange={(e) => {
-                    setIncluirCaixinha(e.target.checked)
-                    setMarcadosVisiveis(new Set())
-                  }}
-                />
-                <span>
-                  Incluir movimentações de caixinhas
-                  <small>Não recomendado: muda o seu saldo.</small>
-                </span>
-              </label>
-
-              <button
-                type="button"
-                className="btn-salvar"
-                disabled={qtdVisiveis === 0}
-                onClick={() => setConfirmando("ocultar")}
-              >
-                {qtdVisiveis === 0
-                  ? "Ocultar meses selecionados"
-                  : `Ocultar ${plural(qtdVisiveis, "transação", "transações")}`}
-              </button>
-            </>
+          {mesesVisiveis.length > 0 && (
+            <button
+              type="button"
+              className="btn-salvar"
+              disabled={qtdVisiveis === 0}
+              onClick={() => setConfirmando("ocultar")}
+            >
+              {qtdVisiveis === 0
+                ? "Ocultar meses selecionados"
+                : `Ocultar ${plural(qtdVisiveis, "transação", "transações")}`}
+            </button>
           )}
 
           {mesesOcultos.length > 0 && (
