@@ -95,6 +95,10 @@ function limparTransacao(t) {
     limpa.parcela = parcela
   }
 
+  if (t.oculta === true) {
+    limpa.oculta = true
+  }
+
   return limpa
 }
 

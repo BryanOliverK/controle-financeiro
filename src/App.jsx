@@ -6,6 +6,7 @@ import Resumo from './components/Resumo'
 import Transacao from './components/Transacao'
 import FormularioTransacao from './components/FormularioTransacao'
 import GerenciarCategorias from './components/GerenciarCategorias'
+import LimparHistorico from './components/LimparHistorico'
 import Categorias from './components/Categorias'
 import Caixinhas from './components/Caixinhas'
 import AjudaAtalhos from './components/AjudaAtalhos'
@@ -43,6 +44,7 @@ import {
   registrarCategorias,
   todasCategorias
 } from './utils/categorias'
+import { idsDosMeses, semOculta } from './utils/historico'
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
 import {
   agruparPorData,
@@ -305,16 +307,19 @@ function App() {
 
   // Valores calculados
 
-  const mesesDisponiveis = useMemo(() => listarMeses(transacoes), [transacoes])
+  // Transações ocultas (limpar histórico) ficam guardadas, mas fora de listas e totais
+  const visiveis = useMemo(() => transacoes.filter((t) => !t.oculta), [transacoes])
+
+  const mesesDisponiveis = useMemo(() => listarMeses(visiveis), [visiveis])
 
   const mesAtivo =
     mes === "todos" || mesesDisponiveis.includes(mes) ? mes : "todos"
 
   const transacoesDoMes = useMemo(
     () => mesAtivo === "todos"
-      ? transacoes
-      : transacoes.filter((t) => chaveMes(t.data) === mesAtivo),
-    [transacoes, mesAtivo]
+      ? visiveis
+      : visiveis.filter((t) => chaveMes(t.data) === mesAtivo),
+    [visiveis, mesAtivo]
   )
 
   // O orçamento é mensal: usa o mês escolhido no filtro ou, em "todos", o mês atual
@@ -444,7 +449,7 @@ function App() {
       const limite = orcamentos[nova.categoria]
       const mesNova = chaveMes(nova.data)
 
-      const gastoAntes = gastoDaCategoria(transacoes, nova.categoria, mesNova)
+      const gastoAntes = gastoDaCategoria(visiveis, nova.categoria, mesNova)
 
       const alerta = nova.tipo === "saida" && limite
         ? mensagemAlerta(nova.categoria, gastoAntes, arredondar(gastoAntes + nova.valor), limite)
@@ -598,6 +603,68 @@ function App() {
         copia.splice(Math.min(indice, copia.length), 0, removida)
         return copia
       })
+    })
+  }
+
+  // Limpar histórico (ocultar, restaurar e excluir por mês)
+
+  function ocultarMeses(meses, incluirCaixinha) {
+
+    const ids = new Set(idsDosMeses(transacoes, meses, { ocultas: false, incluirCaixinha }))
+
+    if (ids.size === 0) {
+      return
+    }
+
+    setTransacoes((atuais) => atuais.map((t) => (ids.has(t.id) ? { ...t, oculta: true } : t)))
+
+    mostrarAviso(`${contar(ids.size, "transação ocultada", "transações ocultadas")}`, "info", () => {
+      setTransacoes((atuais) => atuais.map((t) => {
+        if (!ids.has(t.id)) {
+          return t
+        }
+
+        return semOculta(t)
+      }))
+
+      fecharAviso()
+    })
+  }
+
+  function restaurarMeses(meses) {
+
+    const ids = new Set(idsDosMeses(transacoes, meses, { ocultas: true, incluirCaixinha: true }))
+
+    if (ids.size === 0) {
+      return
+    }
+
+    setTransacoes((atuais) => atuais.map((t) => {
+      if (!ids.has(t.id)) {
+        return t
+      }
+
+      return semOculta(t)
+    }))
+
+    mostrarAviso(contar(ids.size, "transação restaurada", "transações restauradas"))
+  }
+
+  function excluirOcultasDeVez(meses) {
+
+    const ids = new Set(idsDosMeses(transacoes, meses, { ocultas: true, incluirCaixinha: true }))
+
+    if (ids.size === 0) {
+      return
+    }
+
+    const removidas = transacoes.filter((t) => ids.has(t.id))
+
+    setTransacoes((atuais) => atuais.filter((t) => !ids.has(t.id)))
+
+    mostrarAviso(contar(ids.size, "transação excluída", "transações excluídas"), "info", () => {
+      setTransacoes((atuais) => unirPorId(atuais, removidas))
+      fecharAviso()
     })
   }
 
@@ -1048,7 +1115,7 @@ function App() {
 
           {aba === "inicio" && (
             <>
-              {!boasVindasVistas && transacoes.length === 0 && (
+              {!boasVindasVistas && visiveis.length === 0 && (
                 <BoasVindas
                   onComecar={() => { setBoasVindasVistas(true); mudarAba("nova") }}
                   onDispensar={() => setBoasVindasVistas(true)}
@@ -1083,6 +1150,13 @@ function App() {
               </div>
 
               <Backup onExportar={exportarBackup} onImportar={importarBackup} />
+
+              <LimparHistorico
+                transacoes={transacoes}
+                onOcultar={ocultarMeses}
+                onRestaurar={restaurarMeses}
+                onExcluirDeVez={excluirOcultasDeVez}
+              />
             </>
           )}
 
@@ -1155,7 +1229,7 @@ function App() {
             <>
               <h2 className="titulo-secao">Comparação entre meses</h2>
 
-              <ComparacaoMeses transacoes={transacoes} />
+              <ComparacaoMeses transacoes={visiveis} />
 
               <h2 className="titulo-secao titulo-espaco">Gastos por categoria</h2>
 
@@ -1167,7 +1241,7 @@ function App() {
               <h2 className="titulo-secao titulo-espaco">Orçamento</h2>
 
               <Orcamentos
-                transacoes={transacoes}
+                transacoes={visiveis}
                 orcamentos={orcamentos}
                 mes={mesOrcamento}
                 onDefinir={definirOrcamento}
