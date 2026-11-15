@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
@@ -23,34 +23,24 @@ import Icone from './components/Icone'
 import Vazio from './components/Vazio'
 import Login from './components/Login'
 import TelaCarregando from './components/TelaCarregando'
-import { auth, db, provider } from './firebase'
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signInWithRedirect,
-  signOut
-} from 'firebase/auth'
-import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 
 import { useAviso } from './hooks/useAviso'
 import { useAtalhos } from './hooks/useAtalhos'
 import { useAtualizacao } from './hooks/useAtualizacao'
 import { useInstalar } from './hooks/useInstalar'
 import { useLocalStorage } from './hooks/useLocalStorage'
+import { useLogin } from './hooks/useLogin'
+import { useSincronizacao } from './hooks/useSincronizacao'
 
 import {
   categoriaCompativel,
-  limparCategoriasExtras,
   nomeCategoria,
   novaChaveCategoria,
   registrarCategorias,
   todasCategorias
 } from './utils/categorias'
 import { semCartao, semOculta } from './utils/historico'
-import { chaveFatura, infoCartao, limparCartoes, limparFaturasPagas, registrarCartoes } from './utils/cartoes'
+import { chaveFatura, infoCartao, limparFaturasPagas, registrarCartoes } from './utils/cartoes'
 import { listarCompromissos } from './utils/compromissos'
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
 import { gerarAvisos, limparAvisosLidos } from './utils/avisos'
@@ -75,10 +65,9 @@ import {
   paraInputData
 } from './utils/formatar'
 import { unirPorId } from './utils/listas'
-import { gastoDaCategoria, limparOrcamentos, mensagemAlerta } from './utils/orcamentos'
+import { gastoDaCategoria, mensagemAlerta } from './utils/orcamentos'
 import { criarRecorrente, gerarPendentes } from './utils/recorrentes'
 import { imprimirRelatorio, montarRelatorioHtml } from './utils/relatorio'
-import { mensagemErroAuth } from './utils/erroAuth'
 import { validarTransacao } from './utils/validacao'
 
 import './App.css'
@@ -120,7 +109,6 @@ function App() {
 
   const [form, setForm] = useState(FORM_VAZIO)
   const [editandoId, setEditandoId] = useState(null)
-  const [erroSincronia, setErroSincronia] = useState("")
   const [limparAberto, setLimparAberto] = useState(false)
   const [ajudaAberta, setAjudaAberta] = useState(false)
 
@@ -147,173 +135,20 @@ function App() {
   const { podeInstalar, instalar } = useInstalar()
   const { atualizacaoDisponivel, atualizar } = useAtualizacao()
 
-  // ===== Firebase: login e sincronização (código original, sem alterações) =====
+  // Login e sincronização com a nuvem (veja hooks/useLogin e hooks/useSincronizacao)
 
-  const [usuario, setUsuario] = useState(null)
-  const [verificandoLogin, setVerificandoLogin] = useState(true)
-  const [sincronizado, setSincronizado] = useState(false)
-  const [erroLogin, setErroLogin] = useState("")
-  const ultimoRemoto = useRef("")
+  const {
+    usuario, verificandoLogin, erroLogin,
+    entrarComGoogle, entrarComEmail, criarContaComEmail, recuperarSenha, sair
+  } = useLogin()
 
-  // Login
+  const { sincronizado, erroSincronia } = useSincronizacao({
+    usuario,
+    mostrarAviso,
+    dados: { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos },
+    alterar: { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos }
+  })
 
-  useEffect(() => {
-    return onAuthStateChanged(auth, (pessoa) => {
-      setUsuario(pessoa)
-      setVerificandoLogin(false)
-
-      if (!pessoa) {
-        setSincronizado(false)
-      }
-    })
-  }, [])
-
-  // Recebe os dados da nuvem em tempo real
-
-  useEffect(() => {
-  if (!usuario) {
-    return
-  }
-
-  const referencia = doc(db, "usuarios", usuario.uid)
-
-  // includeMetadataChanges: avisa também quando o Firestore passa do cache
-  // para a resposta do servidor (sem isso, uma conta sem documento ficaria
-  // esperando para sempre depois de uma resposta só do cache)
-  return onSnapshot(referencia, { includeMetadataChanges: true }, (snap) => {
-    // Eco das nossas próprias gravações: ignora
-    if (snap.metadata.hasPendingWrites) {
-      return
-    }
-
-    // Resposta só do cache e sem documento = o Firestore acha que está sem
-    // conexão. Ainda não dá para saber se a conta é nova: espera o servidor.
-    // (Tratar como "conta nova" poderia subir dados locais vazios por cima
-    // dos da nuvem.)
-    if (!snap.exists() && snap.metadata.fromCache) {
-      return
-    }
-
-    const chaveMigracao = "migrado_" + usuario.uid
-    const primeiraVez = !localStorage.getItem(chaveMigracao)
-
-    if (!snap.exists()) {
-      // Conta nova: o que já existe neste aparelho sobe para a nuvem
-      localStorage.setItem(chaveMigracao, "1")
-      setSincronizado(true)
-      return
-    }
-
-    const dados = snap.data()
-
-    const remotasT = dados.transacoes || []
-    const remotasC = dados.caixinhas || []
-    const cdiRemoto = dados.cdi ?? "14.5"
-    const pctRemoto = dados.pctCdi ?? "100"
-    const orcamentosRemoto = limparOrcamentos(dados.orcamentos)
-    const recorrentesRemoto = dados.recorrentes || []
-    const categoriasRemoto = limparCategoriasExtras(dados.categoriasExtras)
-    const cartoesRemoto = limparCartoes(dados.cartoes)
-    const pagasRemoto = limparFaturasPagas(dados.faturasPagas)
-    const lidosRemoto = limparAvisosLidos(dados.avisosLidos)
-
-    const chave = JSON.stringify({
-      transacoes: remotasT,
-      caixinhas: remotasC,
-      cdi: cdiRemoto,
-      pctCdi: pctRemoto,
-      orcamentos: orcamentosRemoto,
-      recorrentes: recorrentesRemoto,
-      categoriasExtras: categoriasRemoto,
-      cartoes: cartoesRemoto,
-      faturasPagas: pagasRemoto,
-      avisosLidos: lidosRemoto
-    })
-
-    if (chave !== ultimoRemoto.current) {
-      ultimoRemoto.current = chave
-
-      setTransacoes((locais) =>
-        primeiraVez ? unirPorId(remotasT, locais) : remotasT
-      )
-
-      setCaixinhas((locais) =>
-        primeiraVez ? unirPorId(remotasC, locais) : remotasC
-      )
-
-      setCdi(cdiRemoto)
-      setPctCdi(pctRemoto)
-
-      setOrcamentos((locais) =>
-        primeiraVez ? { ...locais, ...orcamentosRemoto } : orcamentosRemoto
-      )
-
-      setRecorrentes((locais) =>
-        primeiraVez ? unirPorId(recorrentesRemoto, locais) : recorrentesRemoto
-      )
-
-      setCategoriasExtras((locais) =>
-        primeiraVez ? unirPorId(categoriasRemoto, locais) : categoriasRemoto
-      )
-
-      setCartoes((locais) =>
-        primeiraVez ? unirPorId(cartoesRemoto, locais) : cartoesRemoto
-      )
-
-      setFaturasPagas((locais) =>
-        primeiraVez ? limparFaturasPagas([...pagasRemoto, ...locais]) : pagasRemoto
-      )
-
-      setAvisosLidos((locais) =>
-        primeiraVez ? limparAvisosLidos([...lidosRemoto, ...locais]) : lidosRemoto
-      )
-    }
-
-    localStorage.setItem(chaveMigracao, "1")
-    setSincronizado(true)
-    setErroSincronia("")
-    }, (erro) => {
-      setErroSincronia(
-        erro.code === "permission-denied"
-          ? "O Firebase recusou o acesso aos seus dados. Confira as regras do Firestore."
-          : "Não foi possível carregar seus dados da nuvem. Confira sua conexão e tente de novo."
-      )
-    })
-  }, [usuario])
-  // Envia as mudanças para a nuvem
-
-  useEffect(() => {
-    if (!usuario || !sincronizado) {
-      return
-    }
-
-    const dados = JSON.parse(JSON.stringify({
-      transacoes,
-      caixinhas,
-      cdi,
-      pctCdi,
-      orcamentos,
-      recorrentes,
-      categoriasExtras,
-      cartoes,
-      faturasPagas,
-      avisosLidos
-    }))
-
-    const chave = JSON.stringify(dados)
-
-    if (chave === ultimoRemoto.current) {
-      return
-    }
-
-    ultimoRemoto.current = chave
-
-    setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
-      .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
-
-  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos])
-
-  // ===== Fim do código do Firebase =====
 
   // Lançamentos mensais: lança os meses que já chegaram (só depois de sincronizar)
 
@@ -1056,75 +891,6 @@ function App() {
         fecharAviso()
       }
     )
-  }
-
-  // Firebase: entrar e sair (código original, sem alterações)
-
-  function entrarComGoogle() {
-    setErroLogin("")
-
-    signInWithPopup(auth, provider).catch((erro) => {
-
-      if (
-        erro.code === "auth/popup-closed-by-user" ||
-        erro.code === "auth/cancelled-popup-request"
-      ) {
-        return
-      }
-
-      if (erro.code === "auth/popup-blocked") {
-        signInWithRedirect(auth, provider)
-        return
-      }
-
-      setErroLogin("Não foi possível entrar. Tente novamente.")
-    })
-  }
-
-  // Firebase: login por e-mail e senha (adicionado depois do código original).
-  // Cada função devolve o texto do erro, ou null quando deu certo.
-
-  async function entrarComEmail(email, senha) {
-    setErroLogin("")
-
-    try {
-      await signInWithEmailAndPassword(auth, email.trim(), senha)
-      return null
-    } catch (erro) {
-      return mensagemErroAuth(erro.code)
-    }
-  }
-
-  async function criarContaComEmail(email, senha) {
-    setErroLogin("")
-
-    try {
-      await createUserWithEmailAndPassword(auth, email.trim(), senha)
-      return null
-    } catch (erro) {
-      return mensagemErroAuth(erro.code)
-    }
-  }
-
-  async function recuperarSenha(email) {
-    try {
-      await sendPasswordResetEmail(auth, email.trim())
-      return null
-    } catch (erro) {
-      // Não revela se o e-mail tem conta ou não
-      return erro.code === "auth/user-not-found" ? null : mensagemErroAuth(erro.code)
-    }
-  }
-
-  function sair() {
-    signOut(auth).then(() => {
-
-      // Limpa a cópia local para ninguém ver seus dados neste aparelho
-      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi", "orcamentos", "recorrentes", "categoriasExtras", "cartoes", "faturasPagas", "avisosLidos"]
-        .forEach((chave) => localStorage.removeItem(chave))
-
-      window.location.reload()
-    })
   }
 
   // Atalhos de teclado (só com o app aberto, depois do login e da sincronização)
