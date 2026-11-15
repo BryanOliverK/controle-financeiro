@@ -113,15 +113,20 @@ export function agruparCompromissosPorMes(itens) {
       grupos.set(mes, { mes, itens: [], saidas: 0, entradas: 0 })
     }
 
+    // Soma em centavos (inteiros) para não acumular erro de arredondamento
     const g = grupos.get(mes)
     g.itens.push(item)
 
     if (item.tipo === "entrada") {
-      g.entradas += Math.round(item.valor * 100) / 100
+      g.entradas += Math.round(item.valor * 100)
     } else {
-      g.saidas += Math.round(item.valor * 100) / 100
+      g.saidas += Math.round(item.valor * 100)
     }
   }
 
-  return [...grupos.values()]
+  return [...grupos.values()].map((g) => ({
+    ...g,
+    saidas: g.saidas / 100,
+    entradas: g.entradas / 100
+  }))
 }
