@@ -1,6 +1,7 @@
 import Icone from "./Icone"
 import { categoriasPara } from "../utils/categorias"
-import { hojeLocal } from "../utils/formatar"
+import { brl, hojeLocal } from "../utils/formatar"
+import { MAX_PARCELAS, dividirEmParcelas } from "../utils/parcelas"
 import { LIMITE_DESCRICAO } from "../utils/validacao"
 
 const TIPOS = [
@@ -14,6 +15,15 @@ function FormularioTransacao({ form, editando, onAlterar, onSalvar, onCancelar }
 
   const categorias = categoriasPara(form.tipo)
   const diaDoMes = Number((form.data || hojeLocal()).split("-")[2])
+
+  const podeParcelar = !editando && form.tipo === "saida"
+  const quantidade = Math.floor(Number(form.parcelas))
+  const valorTotal = Number(form.valor)
+
+  const previaParcelas =
+    form.parcelar && quantidade >= 2 && quantidade <= MAX_PARCELAS && valorTotal > 0
+      ? dividirEmParcelas(valorTotal, quantidade)
+      : null
 
   function enviar(evento) {
     evento.preventDefault()
@@ -104,7 +114,13 @@ function FormularioTransacao({ form, editando, onAlterar, onSalvar, onCancelar }
             <input
               type="checkbox"
               checked={form.repetir}
-              onChange={(e) => onAlterar("repetir", e.target.checked)}
+              onChange={(e) => {
+                onAlterar("repetir", e.target.checked)
+
+                if (e.target.checked) {
+                  onAlterar("parcelar", false)
+                }
+              }}
             />
 
             <span className="repetir-icone">
@@ -121,6 +137,56 @@ function FormularioTransacao({ form, editando, onAlterar, onSalvar, onCancelar }
 
             <span className="repetir-chave" aria-hidden="true" />
           </label>
+        )}
+
+        {podeParcelar && (
+          <div className="campo-parcelar">
+            <label className="campo-repetir">
+              <input
+                type="checkbox"
+                checked={form.parcelar}
+                onChange={(e) => {
+                  onAlterar("parcelar", e.target.checked)
+
+                  if (e.target.checked) {
+                    onAlterar("repetir", false)
+                  }
+                }}
+              />
+
+              <span className="repetir-icone">
+                <Icone nome="transacoes" tamanho={18} />
+              </span>
+
+              <span className="repetir-texto">
+                <strong>Parcelar compra</strong>
+                <small>Divide o valor em parcelas, uma por mês</small>
+              </span>
+
+              <span className="repetir-chave" aria-hidden="true" />
+            </label>
+
+            {form.parcelar && (
+              <div className="parcelar-detalhe">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="2"
+                  max={MAX_PARCELAS}
+                  step="1"
+                  aria-label="Número de parcelas"
+                  value={form.parcelas}
+                  onChange={(e) => onAlterar("parcelas", e.target.value)}
+                />
+
+                <span className="parcelar-previa" aria-live="polite">
+                  {previaParcelas
+                    ? `${quantidade}x de ${brl(previaParcelas[0])}`
+                    : `Informe de 2 a ${MAX_PARCELAS} parcelas`}
+                </span>
+              </div>
+            )}
+          </div>
         )}
 
         <input

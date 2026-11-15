@@ -1,6 +1,6 @@
 import { useState } from "react"
 import Icone from "./Icone"
-import { CATEGORIAS } from "../utils/categorias"
+import { todasCategorias } from "../utils/categorias"
 import { brl, nomeMes } from "../utils/formatar"
 import { gastoDaCategoria, statusOrcamento } from "../utils/orcamentos"
 
@@ -89,7 +89,7 @@ function LinhaOrcamento({ chave, info, gasto, limite, onDefinir }) {
 function Orcamentos({ transacoes, orcamentos, mes, onDefinir }) {
 
   // Salário só entra dinheiro: não faz sentido ter limite de gasto
-  const categorias = Object.entries(CATEGORIAS).filter(([, info]) => info.tipo === "ambos")
+  const categorias = todasCategorias().filter(([, info]) => info.tipo === "ambos")
 
   return (
     <div className="orc-card">

@@ -213,6 +213,47 @@ const CAMINHOS = {
     </>
   ),
 
+  // Extras para categorias personalizadas
+  saude: (
+    <path d="M12 20.5s-8-4.7-8-10.5A4.5 4.5 0 0 1 12 7.2 4.5 4.5 0 0 1 20 10c0 5.8-8 10.5-8 10.5z" />
+  ),
+  pet: (
+    <>
+      <circle cx="6.5" cy="10" r="1.8" />
+      <circle cx="10" cy="6" r="1.8" />
+      <circle cx="14" cy="6" r="1.8" />
+      <circle cx="17.5" cy="10" r="1.8" />
+      <path d="M12 12c-3 0-5 2.6-5 4.8 0 1.6 1.3 2.4 2.7 2.2 1-.1 1.5-.5 2.3-.5s1.3.4 2.3.5c1.4.2 2.7-.6 2.7-2.2 0-2.2-2-4.8-5-4.8z" />
+    </>
+  ),
+  cafe: (
+    <>
+      <path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z" />
+      <path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16" />
+      <path d="M8 3.5v2M12 3.5v2" />
+    </>
+  ),
+  celular: (
+    <>
+      <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+      <path d="M11 18.5h2" />
+    </>
+  ),
+  musica: (
+    <>
+      <path d="M9 18V5l11-2v13" />
+      <circle cx="6.5" cy="18" r="2.5" />
+      <circle cx="17.5" cy="16" r="2.5" />
+    </>
+  ),
+  trabalho: (
+    <>
+      <rect x="3" y="7" width="18" height="13" rx="2.5" />
+      <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+      <path d="M3 13h18" />
+    </>
+  ),
+
   // Extras das caixinhas
   aviao: (
     <>

@@ -1,11 +1,13 @@
 import { hojeLocal } from "./formatar"
+import { limparCategoriasExtras } from "./categorias"
 import { limparOrcamentos } from "./orcamentos"
+import { limparParcela } from "./parcelas"
 
 const VERSAO = 1
 const TAMANHO_MAXIMO = 5 * 1024 * 1024 // 5 MB: um backup de verdade é bem menor
 
 // Baixa um arquivo .json com todos os dados do app
-export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes }) {
+export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras }) {
   const conteudo = JSON.stringify(
     {
       app: "controle-financeiro",
@@ -16,7 +18,8 @@ export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, r
       cdi,
       pctCdi,
       orcamentos,
-      recorrentes
+      recorrentes,
+      categoriasExtras
     },
     null,
     2
@@ -77,7 +80,7 @@ function recorrenteValida(r) {
 
 // Fica só com os campos que o app conhece (nada de campo estranho vindo do arquivo)
 function limparTransacao(t) {
-  return {
+  const limpa = {
     id: t.id,
     descricao: t.descricao,
     valor: t.valor,
@@ -85,6 +88,14 @@ function limparTransacao(t) {
     categoria: typeof t.categoria === "string" ? t.categoria : "",
     data: t.data
   }
+
+  const parcela = limparParcela(t.parcela)
+
+  if (parcela) {
+    limpa.parcela = parcela
+  }
+
+  return limpa
 }
 
 function limparRecorrente(r) {
@@ -153,6 +164,7 @@ export async function lerBackup(arquivo) {
     transacoes: dados.transacoes.map(limparTransacao),
     caixinhas: dados.caixinhas.map(limparCaixinha),
     orcamentos: limparOrcamentos(dados.orcamentos),
-    recorrentes
+    recorrentes,
+    categoriasExtras: limparCategoriasExtras(dados.categoriasExtras)
   }
 }

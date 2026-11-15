@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar'
 import Resumo from './components/Resumo'
 import Transacao from './components/Transacao'
 import FormularioTransacao from './components/FormularioTransacao'
+import GerenciarCategorias from './components/GerenciarCategorias'
 import Categorias from './components/Categorias'
 import Caixinhas from './components/Caixinhas'
 import AjudaAtalhos from './components/AjudaAtalhos'
@@ -34,7 +35,15 @@ import { useAtalhos } from './hooks/useAtalhos'
 import { useInstalar } from './hooks/useInstalar'
 import { useLocalStorage } from './hooks/useLocalStorage'
 
-import { categoriaCompativel, nomeCategoria } from './utils/categorias'
+import {
+  categoriaCompativel,
+  limparCategoriasExtras,
+  nomeCategoria,
+  novaChaveCategoria,
+  registrarCategorias,
+  todasCategorias
+} from './utils/categorias'
+import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
 import {
   agruparPorData,
   calcularResumo,
@@ -71,7 +80,10 @@ import './carregando.css'
 import './recursos.css'
 
 // data vazia = hoje (o formulário mostra a data de hoje e resolve ao salvar)
-const FORM_VAZIO = { descricao: "", valor: "", tipo: "", categoria: "", data: "", repetir: false }
+const FORM_VAZIO = {
+  descricao: "", valor: "", tipo: "", categoria: "", data: "",
+  repetir: false, parcelar: false, parcelas: "2"
+}
 
 const ABAS = [
   { id: "inicio", icone: "inicio", nome: "Início" },
@@ -106,8 +118,12 @@ function App() {
   const [pctCdi, setPctCdi] = useLocalStorage("pctCdi", "100", { texto: true })
   const [orcamentos, setOrcamentos] = useLocalStorage("orcamentos", {})
   const [recorrentes, setRecorrentes] = useLocalStorage("recorrentes", [])
+  const [categoriasExtras, setCategoriasExtras] = useLocalStorage("categoriasExtras", [])
   const [modoEscuro, setModoEscuro] = useLocalStorage("modoEscuro", false)
   const [boasVindasVistas, setBoasVindasVistas] = useLocalStorage("boasVindasVistas", false)
+
+  // As categorias do usuário precisam estar registradas antes de a tela desenhar
+  registrarCategorias(categoriasExtras)
 
   const { aviso, mostrarAviso, fecharAviso } = useAviso()
   const { podeInstalar, instalar } = useInstalar()
@@ -177,6 +193,7 @@ function App() {
     const pctRemoto = dados.pctCdi ?? "100"
     const orcamentosRemoto = limparOrcamentos(dados.orcamentos)
     const recorrentesRemoto = dados.recorrentes || []
+    const categoriasRemoto = limparCategoriasExtras(dados.categoriasExtras)
 
     const chave = JSON.stringify({
       transacoes: remotasT,
@@ -184,7 +201,8 @@ function App() {
       cdi: cdiRemoto,
       pctCdi: pctRemoto,
       orcamentos: orcamentosRemoto,
-      recorrentes: recorrentesRemoto
+      recorrentes: recorrentesRemoto,
+      categoriasExtras: categoriasRemoto
     })
 
     if (chave !== ultimoRemoto.current) {
@@ -207,6 +225,10 @@ function App() {
 
       setRecorrentes((locais) =>
         primeiraVez ? unirPorId(recorrentesRemoto, locais) : recorrentesRemoto
+      )
+
+      setCategoriasExtras((locais) =>
+        primeiraVez ? unirPorId(categoriasRemoto, locais) : categoriasRemoto
       )
     }
 
@@ -234,7 +256,8 @@ function App() {
       cdi,
       pctCdi,
       orcamentos,
-      recorrentes
+      recorrentes,
+      categoriasExtras
     }))
 
     const chave = JSON.stringify(dados)
@@ -248,7 +271,7 @@ function App() {
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
       .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
 
-  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes])
+  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras])
 
   // ===== Fim do código do Firebase =====
 
@@ -364,6 +387,14 @@ function App() {
 
     const valorNumerico = arredondar(Number(form.valor))
 
+    const parcelando = !editandoId && form.parcelar && form.tipo === "saida"
+    const quantidade = Math.floor(Number(form.parcelas))
+
+    if (parcelando && !(quantidade >= 2 && quantidade <= MAX_PARCELAS)) {
+      mostrarAviso(`Informe de 2 a ${MAX_PARCELAS} parcelas`, "erro")
+      return
+    }
+
     if (editandoId) {
 
       setTransacoes((atuais) => atuais.map((t) => {
@@ -386,7 +417,7 @@ function App() {
 
     } else {
 
-      const nova = {
+      const base = {
         id: novoId(),
         descricao: form.descricao.trim(),
         valor: valorNumerico,
@@ -395,7 +426,14 @@ function App() {
         data: dataParaIso(form.data)
       }
 
-      setTransacoes((atuais) => [...atuais, nova])
+      // Compra parcelada vira uma transação por mês; a primeira é a "nova"
+      const lancamentos = parcelando
+        ? gerarParcelas({ ...base, valorTotal: valorNumerico }, base.data, quantidade)
+        : [base]
+
+      const nova = lancamentos[0]
+
+      setTransacoes((atuais) => [...atuais, ...lancamentos])
 
       // "Repetir todo mês": a próxima já cai no mês seguinte
       if (form.repetir) {
@@ -412,10 +450,12 @@ function App() {
         ? mensagemAlerta(nova.categoria, gastoAntes, arredondar(gastoAntes + nova.valor), limite)
         : null
 
-      const base = form.repetir ? "Transação adicionada e repetida todo mês" : "Transação adicionada"
+      const mensagem = parcelando
+        ? `Compra parcelada em ${quantidade}x adicionada`
+        : form.repetir ? "Transação adicionada e repetida todo mês" : "Transação adicionada"
 
       mostrarAviso(
-        alerta ? `${base}. ${alerta}` : base,
+        alerta ? `${mensagem}. ${alerta}` : mensagem,
         alerta && alerta.includes("estourado") ? "erro" : "info"
       )
     }
@@ -440,7 +480,9 @@ function App() {
         ? transacao.categoria
         : "",
       data: paraInputData(transacao.data),
-      repetir: false
+      repetir: false,
+      parcelar: false,
+      parcelas: "2"
     })
 
     setEditandoId(id)
@@ -559,10 +601,63 @@ function App() {
     })
   }
 
+  // Categorias personalizadas
+
+  function salvarCategoria({ id, nome, icone, cor }) {
+
+    if (id) {
+      setCategoriasExtras((atuais) =>
+        atuais.map((c) => (c.id === id ? { ...c, nome, icone, cor } : c))
+      )
+      mostrarAviso("Categoria atualizada")
+      return
+    }
+
+    setCategoriasExtras((atuais) => [
+      ...atuais,
+      { id: novaChaveCategoria(), nome, icone, cor }
+    ])
+
+    mostrarAviso("Categoria criada")
+  }
+
+  function excluirCategoria(id) {
+
+    const nome = nomeCategoria(id)
+
+    const usadas = transacoes.filter((t) => t.categoria === id).length
+
+    const pergunta = usadas > 0
+      ? `Excluir "${nome}"? As ${usadas} transações dela passam para "Outros".`
+      : `Excluir "${nome}"?`
+
+    if (!window.confirm(pergunta)) {
+      return
+    }
+
+    // Nada fica sem categoria: o que usava ela vira "Outros"
+    setTransacoes((atuais) =>
+      atuais.map((t) => (t.categoria === id ? { ...t, categoria: "outros" } : t))
+    )
+
+    setRecorrentes((atuais) =>
+      atuais.map((r) => (r.categoria === id ? { ...r, categoria: "outros" } : r))
+    )
+
+    setOrcamentos((atuais) =>
+      Object.fromEntries(Object.entries(atuais).filter(([chave]) => chave !== id))
+    )
+
+    setForm((atual) => (atual.categoria === id ? { ...atual, categoria: "" } : atual))
+    setCategoriasExtras((atuais) => atuais.filter((c) => c.id !== id))
+
+    mostrarAviso("Categoria excluída")
+  }
+
   // Backup
 
   function exportarBackup() {
-    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes })
+    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras })
     mostrarAviso("Backup exportado")
   }
 
@@ -589,9 +684,14 @@ function App() {
       const novosLimites = Object.keys(backup.orcamentos)
         .filter((c) => !(c in orcamentos)).length
 
+      const idsCategorias = new Set(categoriasExtras.map((c) => c.id))
+
+      const novasCategorias = backup.categoriasExtras
+        .filter((c) => !idsCategorias.has(c.id)).length
+
       if (
         novasTransacoes === 0 && novasCaixinhas === 0 &&
-        novasRecorrentes === 0 && novosLimites === 0
+        novasRecorrentes === 0 && novosLimites === 0 && novasCategorias === 0
       ) {
         mostrarAviso("Nada novo no backup: seus dados já estão aqui")
         return
@@ -602,6 +702,7 @@ function App() {
       setCaixinhas((atuais) => unirPorId(atuais, backup.caixinhas))
       setRecorrentes((atuais) => unirPorId(atuais, backup.recorrentes))
       setOrcamentos((atuais) => ({ ...backup.orcamentos, ...atuais }))
+      setCategoriasExtras((atuais) => unirPorId(atuais, backup.categoriasExtras))
 
       mostrarAviso(
         "Backup importado: " +
@@ -819,7 +920,7 @@ function App() {
     signOut(auth).then(() => {
 
       // Limpa a cópia local para ninguém ver seus dados neste aparelho
-      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi", "orcamentos", "recorrentes"]
+      ["transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi", "orcamentos", "recorrentes", "categoriasExtras"]
         .forEach((chave) => localStorage.removeItem(chave))
 
       window.location.reload()
@@ -1104,6 +1205,13 @@ function App() {
               <Recorrentes
                 recorrentes={recorrentes}
                 onExcluir={excluirRecorrente}
+              />
+
+              <GerenciarCategorias
+                categorias={categoriasExtras}
+                existentes={todasCategorias().map(([chave, info]) => ({ chave, nome: info.nome }))}
+                onSalvar={salvarCategoria}
+                onExcluir={excluirCategoria}
               />
             </>
           )}

@@ -6,7 +6,7 @@ import { brl } from "../utils/formatar"
 // (transações de caixinha não podem ser editadas aqui).
 function Transacao({ transacao, onEditar, onExcluir }) {
 
-    const { id, descricao, valor, tipo, categoria, data } = transacao
+    const { id, descricao, valor, tipo, categoria, data, parcela } = transacao
 
     const dataTransacao = new Date(data)
     const mostrarAcoes = categoria !== "caixinha" && (onEditar || onExcluir)
@@ -22,7 +22,14 @@ function Transacao({ transacao, onEditar, onExcluir }) {
             </span>
 
             <div className="info-transacao">
-                <h3>{descricao}</h3>
+                <h3>
+                    {descricao}
+                    {parcela && (
+                        <span className="selo-parcela" title="Compra parcelada">
+                            {parcela.n}/{parcela.total}
+                        </span>
+                    )}
+                </h3>
 
                 <p className="data-transacao">
                     {categoria && <>{nomeCategoria(categoria)}{" · "}</>}
