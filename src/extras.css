@@ -7,7 +7,7 @@
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 50;
+  z-index: 80; /* acima das janelas (60), para o "Desfazer" sempre dar para clicar */
   display: flex;
   align-items: center;
   gap: 14px;

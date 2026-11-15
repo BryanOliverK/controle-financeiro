@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Icone from "./Icone"
 import ConfirmarAcao from "./ConfirmarAcao"
 import { nomeMes } from "../utils/formatar"
@@ -49,9 +49,9 @@ function ListaMeses({ meses, marcados, onAlternar, onAlternarAno }) {
   )
 }
 
-function LimparHistorico({ transacoes, onOcultar, onRestaurar, onExcluirDeVez }) {
+function LimparHistorico({ transacoes, onOcultar, onRestaurar, onExcluirDeVez, onFechar }) {
 
-  const [aberto, setAberto] = useState(false)
+  const botaoFechar = useRef(null)
   const [incluirCaixinha, setIncluirCaixinha] = useState(false)
   const [marcadosVisiveis, setMarcadosVisiveis] = useState(new Set())
   const [marcadosOcultos, setMarcadosOcultos] = useState(new Set())
@@ -83,6 +83,25 @@ function LimparHistorico({ transacoes, onOcultar, onRestaurar, onExcluirDeVez })
   const caixinhasFora = incluirCaixinha
     ? 0
     : contarCaixinhas(transacoes, escolhidosVisiveis.map((m) => m.mes))
+
+  useEffect(() => {
+    botaoFechar.current?.focus()
+  }, [])
+
+  useEffect(() => {
+    if (confirmando) {
+      return
+    }
+
+    function aoTeclar(evento) {
+      if (evento.key === "Escape") {
+        onFechar()
+      }
+    }
+
+    window.addEventListener("keydown", aoTeclar)
+    return () => window.removeEventListener("keydown", aoTeclar)
+  }, [confirmando, onFechar])
 
   function alternar(setter, mes) {
     setter((atual) => {
@@ -119,22 +138,33 @@ function LimparHistorico({ transacoes, onOcultar, onRestaurar, onExcluirDeVez })
   }
 
   return (
-    <section className="limpar-historico">
-
-      <button
-        type="button"
-        className="gc-titulo"
-        onClick={() => setAberto(!aberto)}
-        aria-expanded={aberto}
+    <>
+    <div className="ajuda-fundo" onClick={onFechar}>
+      <div
+        className="ajuda-janela limpar-janela"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="limpar-titulo"
+        onClick={(evento) => evento.stopPropagation()}
       >
-        <span>
-          Limpar histórico
-          {totalOcultos > 0 && ` (${totalOcultos} oculta${totalOcultos === 1 ? "" : "s"})`}
-        </span>
-        <Icone nome="chevronBaixo" tamanho={18} className={aberto ? "gc-seta aberta" : "gc-seta"} />
-      </button>
 
-      {aberto && (
+        <div className="limpar-topo">
+          <h2 id="limpar-titulo">
+            Limpar histórico
+            {totalOcultos > 0 && <small>{totalOcultos} oculta{totalOcultos === 1 ? "" : "s"}</small>}
+          </h2>
+
+          <button
+            ref={botaoFechar}
+            type="button"
+            className="limpar-fechar"
+            onClick={onFechar}
+            aria-label="Fechar"
+          >
+            <Icone nome="adicionar" tamanho={20} className="limpar-x" />
+          </button>
+        </div>
+
         <div className="gc-corpo">
 
           <p className="lh-ajuda">
@@ -224,7 +254,9 @@ function LimparHistorico({ transacoes, onOcultar, onRestaurar, onExcluirDeVez })
           )}
 
         </div>
-      )}
+
+      </div>
+    </div>
 
       {confirmando === "ocultar" && (
         <ConfirmarAcao
@@ -268,7 +300,7 @@ function LimparHistorico({ transacoes, onOcultar, onRestaurar, onExcluirDeVez })
         </ConfirmarAcao>
       )}
 
-    </section>
+    </>
   )
 }
 

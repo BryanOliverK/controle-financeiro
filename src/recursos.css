@@ -994,3 +994,64 @@
   background-color: var(--saida);
   color: #fff;
 }
+
+/* Janela de limpar histórico (aba Transações) */
+
+.limpar-janela {
+  max-width: 520px;
+  max-height: min(86vh, 760px);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.limpar-janela .gc-corpo {
+  padding: 0;
+}
+
+.limpar-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.limpar-topo h2 {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.limpar-topo h2 small {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.limpar-fechar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.limpar-fechar:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.limpar-x {
+  transform: rotate(45deg);
+}
+
+.btn-limpar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

@@ -110,6 +110,7 @@ function App() {
   const [form, setForm] = useState(FORM_VAZIO)
   const [editandoId, setEditandoId] = useState(null)
   const [erroSincronia, setErroSincronia] = useState("")
+  const [limparAberto, setLimparAberto] = useState(false)
   const [ajudaAberta, setAjudaAberta] = useState(false)
 
   // Dados (guardados no aparelho; a sincronização com a nuvem vem mais abaixo)
@@ -1150,13 +1151,6 @@ function App() {
               </div>
 
               <Backup onExportar={exportarBackup} onImportar={importarBackup} />
-
-              <LimparHistorico
-                transacoes={transacoes}
-                onOcultar={ocultarMeses}
-                onRestaurar={restaurarMeses}
-                onExcluirDeVez={excluirOcultasDeVez}
-              />
             </>
           )}
 
@@ -1196,6 +1190,11 @@ function App() {
 
                 <button className="btn-exportar" onClick={exportarPDF}>
                   Relatório PDF
+                </button>
+
+                <button className="btn-exportar btn-limpar" onClick={() => setLimparAberto(true)}>
+                  <Icone nome="lixeira" tamanho={16} />
+                  Limpar
                 </button>
               </div>
 
@@ -1295,6 +1294,16 @@ function App() {
       </main>
 
       {ajudaAberta && <AjudaAtalhos onFechar={() => setAjudaAberta(false)} />}
+
+      {limparAberto && (
+        <LimparHistorico
+          transacoes={transacoes}
+          onOcultar={ocultarMeses}
+          onRestaurar={restaurarMeses}
+          onExcluirDeVez={excluirOcultasDeVez}
+          onFechar={() => setLimparAberto(false)}
+        />
+      )}
 
       {aviso && (
         <div className={"aviso " + aviso.tipo} key={aviso.id} role="status">
