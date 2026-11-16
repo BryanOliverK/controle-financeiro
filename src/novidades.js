@@ -4,6 +4,15 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.8.0",
+    titulo: "Importar extrato",
+    itens: [
+      "Em Transações: importe o extrato do banco (CSV ou OFX) e confira antes de salvar",
+      "Categorias sugeridas e aviso de transações repetidas",
+      "Dá para desfazer a importação logo depois"
+    ]
+  },
+  {
     versao: "1.7.0",
     titulo: "Contas e transferências",
     itens: [

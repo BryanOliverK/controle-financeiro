@@ -12,6 +12,7 @@ import Dividas from './components/Dividas'
 import Compromissos from './components/Compromissos'
 import GerenciarCategorias from './components/GerenciarCategorias'
 import Previsao from './components/Previsao'
+import ImportarExtrato from './components/ImportarExtrato'
 import LimparHistorico from './components/LimparHistorico'
 import Categorias from './components/Categorias'
 import Caixinhas from './components/Caixinhas'
@@ -115,6 +116,7 @@ function App() {
   const [form, setForm] = useState(FORM_VAZIO)
   const [editandoId, setEditandoId] = useState(null)
   const [limparAberto, setLimparAberto] = useState(false)
+  const [importarAberto, setImportarAberto] = useState(false)
   const [ajudaAberta, setAjudaAberta] = useState(false)
 
   // Dados (guardados no aparelho; a sincronização com a nuvem vem mais abaixo)
@@ -603,6 +605,41 @@ function App() {
 
   function marcarAvisosLidos(ids) {
     setAvisosLidos((atuais) => limparAvisosLidos([...atuais, ...ids]))
+  }
+
+  // Importar extrato
+
+  function importarExtrato(itens, contaId) {
+
+    if (itens.length === 0) {
+      return
+    }
+
+    const idConta = contaId && contas.some((c) => c.id === contaId) ? contaId : ""
+
+    const novas = itens.map((i) => ({
+      id: novoId(),
+      descricao: i.descricao,
+      valor: arredondar(i.valor),
+      tipo: i.tipo,
+      categoria: categoriaCompativel(i.categoria, i.tipo) ? i.categoria : "outros",
+      ...(idConta ? { contaId: idConta } : {}),
+      data: i.data
+    }))
+
+    const ids = new Set(novas.map((t) => t.id))
+
+    setTransacoes((atuais) => [...atuais, ...novas])
+    setImportarAberto(false)
+
+    mostrarAviso(
+      `${contar(novas.length, "transação importada", "transações importadas")}`,
+      "info",
+      () => {
+        setTransacoes((atuais) => atuais.filter((t) => !ids.has(t.id)))
+        fecharAviso()
+      }
+    )
   }
 
   // Contas e transferências
@@ -1283,6 +1320,11 @@ function App() {
                   Relatório PDF
                 </button>
 
+                <button className="btn-exportar" onClick={() => setImportarAberto(true)}>
+                  <Icone nome="subir" tamanho={16} />
+                  Importar extrato
+                </button>
+
                 <button className="btn-exportar btn-limpar" onClick={() => setLimparAberto(true)}>
                   <Icone nome="lixeira" tamanho={16} />
                   Limpar
@@ -1434,6 +1476,15 @@ function App() {
       </main>
 
       {ajudaAberta && <AjudaAtalhos onFechar={() => setAjudaAberta(false)} />}
+
+      {importarAberto && (
+        <ImportarExtrato
+          transacoes={transacoes}
+          contas={contas}
+          onImportar={importarExtrato}
+          onFechar={() => setImportarAberto(false)}
+        />
+      )}
 
       {limparAberto && (
         <LimparHistorico

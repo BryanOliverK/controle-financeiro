@@ -2063,3 +2063,151 @@
 .conta-sem-acao select {
   flex: 1;
 }
+
+/* Importar extrato */
+
+.imp-janela {
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.imp-corpo,
+.imp-opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.imp-arquivo {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: #8b5cf6;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.imp-arquivo input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.imp-arquivo:focus-within {
+  outline: 3px solid rgba(139, 92, 246, 0.45);
+  outline-offset: 2px;
+}
+
+.imp-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.imp-inverter {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.imp-marcar {
+  display: flex;
+  gap: 12px;
+}
+
+.imp-lista {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 160px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.imp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.imp-item:last-child {
+  border-bottom: none;
+}
+
+.imp-item.desmarcada {
+  opacity: 0.45;
+}
+
+.imp-item-meio {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.imp-item-meio input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  font-size: 14px;
+}
+
+.imp-item-baixo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.imp-item-baixo small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.imp-item-baixo select {
+  max-width: 150px;
+  font-size: 12px;
+}
+
+.imp-dup {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.imp-valor {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.imp-item.entrada .imp-valor,
+.imp-entra {
+  color: #16a34a;
+}
+
+.imp-item.saida .imp-valor,
+.imp-sai {
+  color: #dc2626;
+}
+
+.imp-rodape p {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
