@@ -58,6 +58,12 @@ describe("gerarParcelas", () => {
     expect(p.every((x) => x.cartaoId === "n")).toBe(true)
     expect(gerarParcelas(base, new Date(2026, 5, 10, 12).toISOString(), 2)[0].cartaoId).toBeUndefined()
   })
+
+  it("leva a conta junto, se houver", () => {
+    const p = gerarParcelas({ ...base, contaId: "c1" }, new Date(2026, 5, 10, 12).toISOString(), 2)
+    expect(p.every((x) => x.contaId === "c1")).toBe(true)
+    expect(gerarParcelas(base, new Date(2026, 5, 10, 12).toISOString(), 2)[0].contaId).toBeUndefined()
+  })
 })
 
 describe("limparParcela", () => {

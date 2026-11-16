@@ -7,6 +7,7 @@ import Transacao from './components/Transacao'
 import FormularioTransacao from './components/FormularioTransacao'
 import Avisos from './components/Avisos'
 import Cartoes from './components/Cartoes'
+import Contas from './components/Contas'
 import Dividas from './components/Dividas'
 import Compromissos from './components/Compromissos'
 import GerenciarCategorias from './components/GerenciarCategorias'
@@ -43,6 +44,7 @@ import {
 import { semCartao, semOculta } from './utils/historico'
 import { chaveFatura, infoCartao, limparFaturasPagas, registrarCartoes } from './utils/cartoes'
 import { listarCompromissos } from './utils/compromissos'
+import { infoConta, limparContas, limparTransferencias, registrarContas, semConta, validarTransferencia } from './utils/contas'
 import { comPagamento, limparDividas, semPagamento, transacaoDoPagamento, validarPagamento } from './utils/dividas'
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
 import { gerarAvisos, limparAvisosLidos } from './utils/avisos'
@@ -84,7 +86,7 @@ import './recursos.css'
 // data vazia = hoje (o formulário mostra a data de hoje e resolve ao salvar)
 const FORM_VAZIO = {
   descricao: "", valor: "", tipo: "", categoria: "", data: "",
-  repetir: false, parcelar: false, parcelas: "2", cartaoId: ""
+  repetir: false, parcelar: false, parcelas: "2", cartaoId: "", contaId: ""
 }
 
 const ABAS = [
@@ -92,6 +94,7 @@ const ABAS = [
   { id: "transacoes", icone: "transacoes", nome: "Transações" },
   { id: "graficos", icone: "graficos", nome: "Gráficos" },
   { id: "caixinhas", icone: "caixinha", nome: "Caixinhas" },
+  { id: "contas", icone: "carteira", nome: "Contas" },
   { id: "planejar", icone: "calendario", nome: "Planejar" },
   { id: "avisos", icone: "sino", nome: "Avisos" },
   { id: "nova", icone: "adicionar", nome: "Adicionar" }
@@ -127,12 +130,15 @@ function App() {
   const [faturasPagas, setFaturasPagas] = useLocalStorage("faturasPagas", [])
   const [avisosLidos, setAvisosLidos] = useLocalStorage("avisosLidos", [])
   const [dividas, setDividas] = useLocalStorage("dividas", [])
+  const [contas, setContas] = useLocalStorage("contas", [])
+  const [transferencias, setTransferencias] = useLocalStorage("transferencias", [])
   const [modoEscuro, setModoEscuro] = useLocalStorage("modoEscuro", false)
   const [boasVindasVistas, setBoasVindasVistas] = useLocalStorage("boasVindasVistas", false)
 
   // As categorias do usuário precisam estar registradas antes de a tela desenhar
   registrarCategorias(categoriasExtras)
   registrarCartoes(cartoes)
+  registrarContas(contas)
 
   const { aviso, mostrarAviso, fecharAviso } = useAviso()
   const { podeInstalar, instalar } = useInstalar()
@@ -148,8 +154,8 @@ function App() {
   const { sincronizado, erroSincronia } = useSincronizacao({
     usuario,
     mostrarAviso,
-    dados: { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas },
-    alterar: { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas }
+    dados: { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias },
+    alterar: { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas, setContas, setTransferencias }
   })
 
 
@@ -327,6 +333,12 @@ function App() {
           delete atualizada.cartaoId
         }
 
+        if (form.contaId) {
+          atualizada.contaId = form.contaId
+        } else {
+          delete atualizada.contaId
+        }
+
         return atualizada
       }))
 
@@ -342,6 +354,7 @@ function App() {
         tipo: form.tipo,
         categoria: form.categoria,
         ...(form.tipo === "saida" && form.cartaoId ? { cartaoId: form.cartaoId } : {}),
+        ...(form.contaId ? { contaId: form.contaId } : {}),
         data: dataParaIso(form.data)
       }
 
@@ -402,7 +415,8 @@ function App() {
       repetir: false,
       parcelar: false,
       parcelas: "2",
-      cartaoId: transacao.cartaoId && infoCartao(transacao.cartaoId) ? transacao.cartaoId : ""
+      cartaoId: transacao.cartaoId && infoCartao(transacao.cartaoId) ? transacao.cartaoId : "",
+      contaId: transacao.contaId && infoConta(transacao.contaId) ? transacao.contaId : ""
     })
 
     setEditandoId(id)
@@ -591,6 +605,69 @@ function App() {
     setAvisosLidos((atuais) => limparAvisosLidos([...atuais, ...ids]))
   }
 
+  // Contas e transferências
+
+  function salvarConta({ id, nome, tipo, saldoInicial, cor }) {
+
+    if (id) {
+      setContas((atuais) => atuais.map((c) => (c.id === id ? { ...c, nome, tipo, saldoInicial, cor } : c)))
+      mostrarAviso("Conta atualizada")
+      return
+    }
+
+    setContas((atuais) => [...atuais, { id: novoId(), nome, tipo, saldoInicial, cor }])
+    mostrarAviso("Conta criada")
+  }
+
+  function excluirConta(id) {
+
+    // As transações ficam no histórico, só deixam de pertencer à conta
+    setTransacoes((atuais) => atuais.map((t) => (t.contaId === id ? semConta(t) : t)))
+    setRecorrentes((atuais) => atuais.map((r) => (r.contaId === id ? semConta(r) : r)))
+    setTransferencias((atuais) => atuais.filter((t) => t.de !== id && t.para !== id))
+    setForm((atual) => (atual.contaId === id ? { ...atual, contaId: "" } : atual))
+    setContas((atuais) => atuais.filter((c) => c.id !== id))
+
+    mostrarAviso("Conta excluída")
+  }
+
+  function transferir({ de, para, valor, data, nota }) {
+
+    const erro = validarTransferencia({ de, para, valor }, contas)
+
+    if (erro) {
+      mostrarAviso(erro, "erro")
+      return
+    }
+
+    setTransferencias((atuais) => [
+      ...atuais,
+      { id: novoId(), de, para, valor: arredondar(Number(valor)), data: dataParaIso(data), nota: nota.trim() }
+    ])
+
+    mostrarAviso("Transferência registrada")
+  }
+
+  function excluirTransferencia(id) {
+    setTransferencias((atuais) => atuais.filter((t) => t.id !== id))
+    mostrarAviso("Transferência desfeita")
+  }
+
+  function atribuirSemConta(contaId) {
+
+    if (!contas.some((c) => c.id === contaId)) {
+      return
+    }
+
+    const ids = new Set(contas.map((c) => c.id))
+
+    setTransacoes((atuais) => atuais.map((t) => (
+      t.categoria !== "caixinha" && (!t.contaId || !ids.has(t.contaId)) ? { ...t, contaId } : t
+    )))
+
+    mostrarAviso("Transações atribuídas à conta")
+  }
+
   // Dívidas e empréstimos
 
   function salvarDivida({ id, tipo, pessoa, valor, descricao, vencimento }) {
@@ -771,7 +848,7 @@ function App() {
   // Backup
 
   function exportarBackup() {
-    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, dividas })
+    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, dividas, contas, transferencias })
     mostrarAviso("Backup exportado")
   }
 
@@ -813,10 +890,21 @@ function App() {
       const novasDividas = backup.dividas
         .filter((d) => !idsDividas.has(d.id)).length
 
+      const idsContas = new Set(contas.map((c) => c.id))
+
+      const novasContas = backup.contas
+        .filter((c) => !idsContas.has(c.id)).length
+
+      const idsTransf = new Set(transferencias.map((t) => t.id))
+
+      const novasTransf = backup.transferencias
+        .filter((t) => !idsTransf.has(t.id)).length
+
       if (
         novasTransacoes === 0 && novasCaixinhas === 0 &&
         novasRecorrentes === 0 && novosLimites === 0 &&
-        novasCategorias === 0 && novosCartoes === 0 && novasDividas === 0
+        novasCategorias === 0 && novosCartoes === 0 && novasDividas === 0 &&
+        novasContas === 0 && novasTransf === 0
       ) {
         mostrarAviso("Nada novo no backup: seus dados já estão aqui")
         return
@@ -831,6 +919,8 @@ function App() {
       setCartoes((atuais) => unirPorId(atuais, backup.cartoes))
       setFaturasPagas((atuais) => limparFaturasPagas([...atuais, ...backup.faturasPagas]))
       setDividas((atuais) => limparDividas(unirPorId(atuais, backup.dividas)))
+      setContas((atuais) => limparContas(unirPorId(atuais, backup.contas)))
+      setTransferencias((atuais) => limparTransferencias(unirPorId(atuais, backup.transferencias)))
 
       mostrarAviso(
         "Backup importado: " +
@@ -1096,7 +1186,7 @@ function App() {
           </div>
         )}
 
-        {!["nova", "caixinhas", "planejar", "avisos"].includes(aba) && mesesDisponiveis.length > 0 && (
+        {!["nova", "caixinhas", "contas", "planejar", "avisos"].includes(aba) && mesesDisponiveis.length > 0 && (
           <div className="barra-mes">
             <select
               value={mesAtivo}
@@ -1249,6 +1339,19 @@ function App() {
             </>
           )}
 
+          {aba === "contas" && (
+            <Contas
+              contas={contas}
+              transacoes={transacoes}
+              transferencias={transferencias}
+              onSalvar={salvarConta}
+              onExcluir={excluirConta}
+              onTransferir={transferir}
+              onExcluirTransferencia={excluirTransferencia}
+              onAtribuirSemConta={atribuirSemConta}
+            />
+          )}
+
           {aba === "caixinhas" && (
             <>
               <h2 className="titulo-secao">Caixinhas</h2>
@@ -1306,6 +1409,7 @@ function App() {
                 form={form}
                 editando={editandoId !== null}
                 cartoes={cartoes}
+                contas={contas}
                 onAlterar={alterarCampo}
                 onSalvar={salvarTransacao}
                 onCancelar={cancelarEdicao}

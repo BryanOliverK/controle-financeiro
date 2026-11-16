@@ -1,13 +1,14 @@
 import Icone from "./Icone"
 import { infoCategoria, nomeCategoria, SEM_CATEGORIA } from "../utils/categorias"
 import { infoCartao } from "../utils/cartoes"
+import { infoConta } from "../utils/contas"
 import { brl } from "../utils/formatar"
 
 // Uma linha da lista. Se receber onEditar/onExcluir, mostra os botões
 // (transações de caixinha não podem ser editadas aqui).
 function Transacao({ transacao, onEditar, onExcluir }) {
 
-    const { id, descricao, valor, tipo, categoria, data, parcela, cartaoId } = transacao
+    const { id, descricao, valor, tipo, categoria, data, parcela, cartaoId, contaId } = transacao
 
     const dataTransacao = new Date(data)
     const mostrarAcoes = categoria !== "caixinha" && (onEditar || onExcluir)
@@ -34,6 +35,7 @@ function Transacao({ transacao, onEditar, onExcluir }) {
 
                 <p className="data-transacao">
                     {categoria && <>{nomeCategoria(categoria)}{" · "}</>}
+                    {contaId && infoConta(contaId) && <>{infoConta(contaId).nome}{" · "}</>}
                     {cartaoId && infoCartao(cartaoId) && <>{infoCartao(cartaoId).nome}{" · "}</>}
                     {dataTransacao.toLocaleDateString("pt-BR", {
                         day: "2-digit",

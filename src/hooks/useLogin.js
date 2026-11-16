@@ -16,7 +16,7 @@ import { mensagemErroAuth } from '../utils/erroAuth'
 // Se um dia surgir um dado novo guardado no aparelho, ele entra aqui também.
 export const CHAVES_LOCAIS = [
   "transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi",
-  "orcamentos", "recorrentes", "categoriasExtras", "cartoes", "faturasPagas", "avisosLidos", "dividas"
+  "orcamentos", "recorrentes", "categoriasExtras", "cartoes", "faturasPagas", "avisosLidos", "dividas", "contas", "transferencias"
 ]
 
 // Login e logout (Google e e-mail/senha). Não mexe em dados financeiros.

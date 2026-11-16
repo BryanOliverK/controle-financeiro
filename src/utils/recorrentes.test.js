@@ -26,6 +26,11 @@ describe("criarRecorrente", () => {
     const r = criarRecorrente({ descricao: "x", valor: 1, tipo: "saida", categoria: "casa", cartaoId: "n" }, new Date(2026, 0, 3, 12).toISOString())
     expect(r.cartaoId).toBe("n")
   })
+
+  it("leva a conta junto", () => {
+    const r = criarRecorrente({ descricao: "x", valor: 1, tipo: "saida", categoria: "casa", contaId: "c1" }, new Date(2026, 0, 3, 12).toISOString())
+    expect(r.contaId).toBe("c1")
+  })
 })
 
 describe("gerarPendentes", () => {
@@ -63,6 +68,11 @@ describe("gerarPendentes", () => {
     const r = gerarPendentes([rec({ cartaoId: "n" })], new Date(2026, 10, 6, 10))
     const t = r.transacoes[0]
     expect([t.descricao, t.valor, t.tipo, t.categoria, t.cartaoId]).toEqual(["Aluguel", 1000, "saida", "casa", "n"])
+  })
+
+  it("copia a conta para a transação gerada", () => {
+    const r = gerarPendentes([rec({ contaId: "c1" })], new Date(2026, 10, 6, 10))
+    expect(r.transacoes[0].contaId).toBe("c1")
   })
 
   it("não mexe nos que ainda não venceram", () => {

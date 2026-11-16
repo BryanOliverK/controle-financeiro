@@ -1939,3 +1939,127 @@
   gap: 4px;
   font-size: 13px;
 }
+
+/* Contas e transferências */
+
+.contas select {
+  width: 100%;
+}
+
+.conta-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.conta-total small {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.conta-total strong {
+  font-size: 22px;
+}
+
+.contas-lista,
+.transf-lista {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conta-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border-left: 4px solid var(--cor, #3b82f6);
+}
+
+.conta-bolinha {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: var(--cor, #3b82f6);
+  background: color-mix(in srgb, var(--cor, #3b82f6) 15%, transparent);
+}
+
+.conta-nome {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.conta-nome small,
+.transf-info small {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.conta-saldo {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.conta-saldo.negativo {
+  color: #dc2626;
+}
+
+.conta-transferir {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.transf-lista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.transf-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.conta-sem {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(245, 158, 11, 0.12);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.conta-sem p {
+  margin: 0 0 8px;
+}
+
+.conta-sem-acao {
+  display: flex;
+  gap: 8px;
+}
+
+.conta-sem-acao select {
+  flex: 1;
+}

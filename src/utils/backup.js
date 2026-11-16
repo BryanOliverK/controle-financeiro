@@ -1,6 +1,7 @@
 import { hojeLocal } from "./formatar"
 import { limparCartoes, limparFaturasPagas } from "./cartoes"
 import { limparCategoriasExtras } from "./categorias"
+import { limparContas, limparTransferencias } from "./contas"
 import { limparDividas } from "./dividas"
 import { limparOrcamentos } from "./orcamentos"
 import { limparParcela } from "./parcelas"
@@ -9,7 +10,7 @@ const VERSAO = 1
 const TAMANHO_MAXIMO = 5 * 1024 * 1024 // 5 MB: um backup de verdade é bem menor
 
 // Baixa um arquivo .json com todos os dados do app
-export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, dividas = [] }) {
+export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, dividas = [], contas = [], transferencias = [] }) {
   const conteudo = JSON.stringify(
     {
       app: "controle-financeiro",
@@ -24,7 +25,9 @@ export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, r
       categoriasExtras,
       cartoes,
       faturasPagas,
-      dividas
+      dividas,
+      contas,
+      transferencias
     },
     null,
     2
@@ -108,12 +111,17 @@ function limparTransacao(t) {
     limpa.cartaoId = t.cartaoId
   }
 
+  if (typeof t.contaId === "string" && t.contaId !== "") {
+    limpa.contaId = t.contaId
+  }
+
   return limpa
 }
 
 function limparRecorrente(r) {
   return {
     ...(typeof r.cartaoId === "string" && r.cartaoId !== "" ? { cartaoId: r.cartaoId } : {}),
+    ...(typeof r.contaId === "string" && r.contaId !== "" ? { contaId: r.contaId } : {}),
     id: r.id,
     descricao: r.descricao,
     valor: r.valor,
@@ -182,6 +190,8 @@ export async function lerBackup(arquivo) {
     categoriasExtras: limparCategoriasExtras(dados.categoriasExtras),
     cartoes: limparCartoes(dados.cartoes),
     faturasPagas: limparFaturasPagas(dados.faturasPagas),
-    dividas: limparDividas(dados.dividas)
+    dividas: limparDividas(dados.dividas),
+    contas: limparContas(dados.contas),
+    transferencias: limparTransferencias(dados.transferencias)
   }
 }

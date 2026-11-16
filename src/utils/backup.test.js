@@ -30,6 +30,20 @@ describe("lerBackup", () => {
     expect(r.cartoes).toEqual([])
     expect(r.faturasPagas).toEqual([])
     expect(r.dividas).toEqual([])
+    expect(r.contas).toEqual([])
+    expect(r.transferencias).toEqual([])
+  })
+
+  it("lê contas, transferências e o contaId das transações", async () => {
+    const r = await lerBackup(arquivo({
+      transacoes: [{ ...transacao, contaId: "c1" }],
+      caixinhas: [],
+      contas: [{ id: "c1", nome: "Nubank", tipo: "banco", saldoInicial: 10 }, { id: "" }],
+      transferencias: [{ id: "t", de: "c1", para: "c2", valor: 5, data }, { id: "x", de: "c1", para: "c1", valor: 5, data }]
+    }))
+    expect(r.transacoes[0].contaId).toBe("c1")
+    expect(r.contas).toHaveLength(1)
+    expect(r.transferencias).toHaveLength(1)
   })
 
   it("lê dívidas e descarta as inválidas", async () => {

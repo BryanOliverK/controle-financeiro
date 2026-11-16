@@ -4,6 +4,15 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.7.0",
+    titulo: "Contas e transferências",
+    itens: [
+      "Nova aba Contas: saldo de cada conta (carteira, banco, poupança...)",
+      "Escolha a conta ao lançar uma transação",
+      "Transfira entre contas sem contar como gasto"
+    ]
+  },
+  {
     versao: "1.6.0",
     titulo: "Dívidas e empréstimos",
     itens: [
