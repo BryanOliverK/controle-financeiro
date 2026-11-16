@@ -29,6 +29,14 @@ describe("lerBackup", () => {
     expect(r.recorrentes).toEqual([])
     expect(r.cartoes).toEqual([])
     expect(r.faturasPagas).toEqual([])
+    expect(r.dividas).toEqual([])
+  })
+
+  it("lê dívidas e descarta as inválidas", async () => {
+    const divida = { id: "d", tipo: "devem", pessoa: "Ana", valor: 50, criadaEm: data, pagamentos: [] }
+    const r = await lerBackup(arquivo({ transacoes: [], caixinhas: [], dividas: [divida, { id: "x" }, "lixo"] }))
+    expect(r.dividas).toHaveLength(1)
+    expect(r.dividas[0].pessoa).toBe("Ana")
   })
 
   it("mantém os campos novos (parcela, oculta, cartão) e descarta campos estranhos", () => {

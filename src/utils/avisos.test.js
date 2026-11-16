@@ -139,3 +139,43 @@ describe("limparAvisosLidos", () => {
     expect(limparAvisosLidos(undefined)).toEqual([])
   })
 })
+
+describe("avisos de dívidas", () => {
+  const div = (extra) => ({
+    id: "d", tipo: "devo", pessoa: "Maria", descricao: "", valor: 100,
+    criadaEm: d(2026, 11, 1), vencimento: "", pagamentos: [], ...extra
+  })
+  const so = (dividas) => gerarAvisos({ ...base, dividas }, hoje).filter((a) => a.tipo === "divida")
+
+  it("sem dívidas ou sem vencimento: nenhum aviso", () => {
+    expect(so([])).toHaveLength(0)
+    expect(so([div()])).toHaveLength(0)
+  })
+
+  it("vence em breve (devo)", () => {
+    const [a] = so([div({ vencimento: "2026-11-17" })])
+    expect(a.titulo).toBe("Pagar Maria em 2 dias")
+    expect(a.nivel).toBe("alerta")
+  })
+
+  it("vence amanhã (devo) é urgente", () => {
+    expect(so([div({ vencimento: "2026-11-16" })])[0].nivel).toBe("urgente")
+  })
+
+  it("alguém deve a você", () => {
+    const [a] = so([div({ tipo: "devem", vencimento: "2026-11-15" })])
+    expect(a.titulo).toBe("Maria deve te pagar hoje")
+  })
+
+  it("vencida", () => {
+    const [a] = so([div({ vencimento: "2026-11-10" })])
+    expect(a.titulo).toBe("Dívida com Maria vencida")
+    expect(a.nivel).toBe("urgente")
+    expect(a.texto).toContain("há 5 dias")
+  })
+
+  it("longe do vencimento ou quitada: sem aviso", () => {
+    expect(so([div({ vencimento: "2026-12-30" })])).toHaveLength(0)
+    expect(so([div({ vencimento: "2026-11-10", pagamentos: [{ id: "p", valor: 100, data: d(2026, 11, 2) }] })])).toHaveLength(0)
+  })
+})

@@ -7,6 +7,7 @@ import Transacao from './components/Transacao'
 import FormularioTransacao from './components/FormularioTransacao'
 import Avisos from './components/Avisos'
 import Cartoes from './components/Cartoes'
+import Dividas from './components/Dividas'
 import Compromissos from './components/Compromissos'
 import GerenciarCategorias from './components/GerenciarCategorias'
 import Previsao from './components/Previsao'
@@ -42,6 +43,7 @@ import {
 import { semCartao, semOculta } from './utils/historico'
 import { chaveFatura, infoCartao, limparFaturasPagas, registrarCartoes } from './utils/cartoes'
 import { listarCompromissos } from './utils/compromissos'
+import { comPagamento, limparDividas, semPagamento, transacaoDoPagamento, validarPagamento } from './utils/dividas'
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
 import { gerarAvisos, limparAvisosLidos } from './utils/avisos'
 import { calcularPrevisao } from './utils/previsao'
@@ -124,6 +126,7 @@ function App() {
   const [cartoes, setCartoes] = useLocalStorage("cartoes", [])
   const [faturasPagas, setFaturasPagas] = useLocalStorage("faturasPagas", [])
   const [avisosLidos, setAvisosLidos] = useLocalStorage("avisosLidos", [])
+  const [dividas, setDividas] = useLocalStorage("dividas", [])
   const [modoEscuro, setModoEscuro] = useLocalStorage("modoEscuro", false)
   const [boasVindasVistas, setBoasVindasVistas] = useLocalStorage("boasVindasVistas", false)
 
@@ -145,8 +148,8 @@ function App() {
   const { sincronizado, erroSincronia } = useSincronizacao({
     usuario,
     mostrarAviso,
-    dados: { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos },
-    alterar: { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos }
+    dados: { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas },
+    alterar: { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas }
   })
 
 
@@ -198,8 +201,8 @@ function App() {
 
   // Avisos (vencimentos, lembretes, orçamento, novidades) e quantos faltam ler
   const avisos = useMemo(
-    () => gerarAvisos({ transacoes: visiveis, recorrentes, cartoes, faturasPagas, orcamentos, previsao }),
-    [visiveis, recorrentes, cartoes, faturasPagas, orcamentos, previsao]
+    () => gerarAvisos({ transacoes: visiveis, recorrentes, cartoes, faturasPagas, orcamentos, previsao, dividas }),
+    [visiveis, recorrentes, cartoes, faturasPagas, orcamentos, previsao, dividas]
   )
 
   const lidosSet = useMemo(() => new Set(avisosLidos), [avisosLidos])
@@ -588,6 +591,90 @@ function App() {
     setAvisosLidos((atuais) => limparAvisosLidos([...atuais, ...ids]))
   }
 
+  // Dívidas e empréstimos
+
+  function salvarDivida({ id, tipo, pessoa, valor, descricao, vencimento }) {
+
+    const dados = {
+      tipo,
+      pessoa: pessoa.trim(),
+      valor: arredondar(valor),
+      descricao: descricao.trim(),
+      vencimento
+    }
+
+    if (id) {
+      setDividas((atuais) => atuais.map((d) => (d.id === id ? { ...d, ...dados } : d)))
+      mostrarAviso("Dívida atualizada")
+      return
+    }
+
+    setDividas((atuais) => [
+      ...atuais,
+      { id: novoId(), ...dados, criadaEm: new Date().toISOString(), pagamentos: [] }
+    ])
+
+    mostrarAviso("Dívida adicionada")
+  }
+
+  function excluirDivida(id) {
+    setDividas((atuais) => atuais.filter((d) => d.id !== id))
+    mostrarAviso("Dívida excluída")
+  }
+
+  function pagarDivida(id, valor, lancar) {
+
+    const divida = dividas.find((d) => d.id === id)
+
+    if (!divida) {
+      return
+    }
+
+    const erro = validarPagamento(divida, valor)
+
+    if (erro) {
+      mostrarAviso(erro, "erro")
+      return
+    }
+
+    const pagamento = {
+      id: novoId(),
+      valor: arredondar(Number(valor)),
+      data: new Date().toISOString()
+    }
+
+    if (lancar) {
+      const transacao = transacaoDoPagamento(divida, pagamento, novoId())
+      pagamento.transacaoId = transacao.id
+      setTransacoes((atuais) => [...atuais, transacao])
+    }
+
+    const atualizada = comPagamento(divida, pagamento)
+    const quitou = arredondar(atualizada.pagamentos.reduce((s, p) => s + p.valor, 0)) >= divida.valor
+
+    setDividas((atuais) => atuais.map((d) => (d.id === id ? comPagamento(d, pagamento) : d)))
+
+    mostrarAviso(quitou ? "Dívida quitada!" : "Pagamento registrado")
+  }
+
+  function desfazerPagamentoDivida(id, idPagamento) {
+
+    const divida = dividas.find((d) => d.id === id)
+    const pagamento = divida?.pagamentos.find((p) => p.id === idPagamento)
+
+    if (!pagamento) {
+      return
+    }
+
+    // Se o pagamento tinha virado uma transação, ela some junto
+    if (pagamento.transacaoId) {
+      setTransacoes((atuais) => atuais.filter((t) => t.id !== pagamento.transacaoId))
+    }
+
+    setDividas((atuais) => atuais.map((d) => (d.id === id ? semPagamento(d, idPagamento) : d)))
+    mostrarAviso("Pagamento desfeito")
+  }
+
   // Cartões e faturas
 
   function salvarCartao({ id, nome, fechamento, vencimento, cor }) {
@@ -684,7 +771,7 @@ function App() {
   // Backup
 
   function exportarBackup() {
-    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas })
+    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, dividas })
     mostrarAviso("Backup exportado")
   }
 
@@ -721,10 +808,15 @@ function App() {
       const novosCartoes = backup.cartoes
         .filter((c) => !idsCartoes.has(c.id)).length
 
+      const idsDividas = new Set(dividas.map((d) => d.id))
+
+      const novasDividas = backup.dividas
+        .filter((d) => !idsDividas.has(d.id)).length
+
       if (
         novasTransacoes === 0 && novasCaixinhas === 0 &&
         novasRecorrentes === 0 && novosLimites === 0 &&
-        novasCategorias === 0 && novosCartoes === 0
+        novasCategorias === 0 && novosCartoes === 0 && novasDividas === 0
       ) {
         mostrarAviso("Nada novo no backup: seus dados já estão aqui")
         return
@@ -738,6 +830,7 @@ function App() {
       setCategoriasExtras((atuais) => unirPorId(atuais, backup.categoriasExtras))
       setCartoes((atuais) => unirPorId(atuais, backup.cartoes))
       setFaturasPagas((atuais) => limparFaturasPagas([...atuais, ...backup.faturasPagas]))
+      setDividas((atuais) => limparDividas(unirPorId(atuais, backup.dividas)))
 
       mostrarAviso(
         "Backup importado: " +
@@ -1195,6 +1288,14 @@ function App() {
                 onSalvar={salvarCartao}
                 onExcluir={excluirCartao}
                 onAlternarPaga={alternarFaturaPaga}
+              />
+
+              <Dividas
+                dividas={dividas}
+                onSalvar={salvarDivida}
+                onExcluir={excluirDivida}
+                onPagar={pagarDivida}
+                onDesfazerPagamento={desfazerPagamentoDivida}
               />
             </>
           )}

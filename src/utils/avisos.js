@@ -9,6 +9,7 @@ import { listarCompromissos } from "./compromissos"
 import { brl, chaveMes } from "./formatar"
 import { nomeCategoria } from "./categorias"
 import { gastoDaCategoria, statusOrcamento } from "./orcamentos"
+import { diasParaVencer, estaQuitada, saldoDivida } from "./dividas"
 import { NOVIDADES } from "../novidades"
 
 const DIAS_DE_ANTECEDENCIA = 3
@@ -35,7 +36,7 @@ export function limparAvisosLidos(bruto) {
 }
 
 // [{ id, nivel: "urgente"|"alerta"|"info", tipo, titulo, texto, destino, ordem }]
-export function gerarAvisos({ transacoes, recorrentes, cartoes, faturasPagas, orcamentos, previsao }, hoje = new Date()) {
+export function gerarAvisos({ transacoes, recorrentes, cartoes, faturasPagas, orcamentos, previsao, dividas = [] }, hoje = new Date()) {
 
   const avisos = []
   const pagas = new Set(faturasPagas)
@@ -111,6 +112,42 @@ export function gerarAvisos({ transacoes, recorrentes, cartoes, faturasPagas, or
       destino: "planejar",
       ordem: 50 + dias
     })
+  }
+
+  // ----- Dívidas e empréstimos -----
+  for (const divida of dividas) {
+    const dias = diasParaVencer(divida, hoje)
+
+    if (dias === null || estaQuitada(divida) || dias > DIAS_DE_ANTECEDENCIA) {
+      continue
+    }
+
+    const devo = divida.tipo === "devo"
+    const falta = brl(saldoDivida(divida))
+
+    if (dias < 0) {
+      const atraso = -dias
+
+      avisos.push({
+        id: `divida-vencida-${divida.id}`,
+        nivel: devo ? "urgente" : "alerta",
+        tipo: "divida",
+        titulo: devo ? `Dívida com ${divida.pessoa} vencida` : `${divida.pessoa} está atrasado(a) com você`,
+        texto: `${falta} em aberto, venceu há ${atraso} ${atraso === 1 ? "dia" : "dias"}.`,
+        destino: "planejar",
+        ordem: dias
+      })
+    } else {
+      avisos.push({
+        id: `divida-vence-${divida.id}-${dias}`,
+        nivel: devo && dias <= 1 ? "urgente" : "alerta",
+        tipo: "divida",
+        titulo: devo ? `Pagar ${divida.pessoa} ${quando(dias)}` : `${divida.pessoa} deve te pagar ${quando(dias)}`,
+        texto: `${falta} em aberto · vencimento dia ${dataCurta(new Date(divida.vencimento + "T12:00:00"))}.`,
+        destino: "planejar",
+        ordem: dias
+      })
+    }
   }
 
   // ----- Orçamentos do mês -----

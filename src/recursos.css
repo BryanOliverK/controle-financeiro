@@ -1741,3 +1741,201 @@
   color: var(--text-muted);
   cursor: pointer;
 }
+
+/* Dívidas e empréstimos */
+
+.dividas {
+  margin-top: 28px;
+}
+
+.divida-resumo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.divida-resumo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.divida-resumo-item small {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.divida-resumo-item strong {
+  font-size: 17px;
+}
+
+.divida-resumo-item.devo strong { color: #dc2626; }
+.divida-resumo-item.devem strong { color: #16a34a; }
+
+.dividas-lista {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.divida {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border-left: 4px solid #dc2626;
+}
+
+.divida.devem { border-left-color: #16a34a; }
+.divida.quitada { opacity: 0.7; }
+
+.divida-topo,
+.divida-valores,
+.divida-acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.divida-topo { justify-content: space-between; }
+
+.divida-quem {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.divida-quem small,
+.divida-valores small,
+.divida-prazo {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.divida-valores {
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.divida-selo {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(100, 116, 139, 0.15);
+  color: var(--text-muted);
+}
+
+.divida-selo.vencida { background: rgba(220, 38, 38, 0.15); color: #dc2626; }
+.divida-selo.quitada { background: rgba(22, 163, 74, 0.15); color: #16a34a; }
+
+.divida-prazo.vencida { color: #dc2626; font-weight: 600; }
+
+.divida-barra {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.18);
+  overflow: hidden;
+}
+
+.divida-barra span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #16a34a;
+}
+
+.divida-acoes { flex-wrap: wrap; }
+
+.divida-pagar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.divida-pagar label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.divida-pagar label.divida-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.divida-historico summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.divida-historico ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.divida-historico li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.divida-desfazer {
+  border: none;
+  background: none;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.divida-tipos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.divida-tipos button {
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.15));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.divida-tipos button.ativo {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.12);
+  font-weight: 600;
+}
+
+.divida-data {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}

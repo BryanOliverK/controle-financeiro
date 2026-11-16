@@ -5,6 +5,7 @@ import { db } from '../firebase'
 import { limparAvisosLidos } from '../utils/avisos'
 import { limparCartoes, limparFaturasPagas } from '../utils/cartoes'
 import { limparCategoriasExtras } from '../utils/categorias'
+import { limparDividas } from '../utils/dividas'
 import { unirPorId } from '../utils/listas'
 import { limparOrcamentos } from '../utils/orcamentos'
 
@@ -16,8 +17,8 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso }) {
   const [erroSincronia, setErroSincronia] = useState("")
   const ultimoRemoto = useRef("")
 
-  const { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos } = dados
-  const { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos } = alterar
+  const { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas } = dados
+  const { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas } = alterar
 
   // Sem login: volta a "não sincronizado"
   useEffect(() => {
@@ -75,6 +76,7 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso }) {
     const cartoesRemoto = limparCartoes(dados.cartoes)
     const pagasRemoto = limparFaturasPagas(dados.faturasPagas)
     const lidosRemoto = limparAvisosLidos(dados.avisosLidos)
+    const dividasRemoto = limparDividas(dados.dividas)
 
     const chave = JSON.stringify({
       transacoes: remotasT,
@@ -86,7 +88,8 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso }) {
       categoriasExtras: categoriasRemoto,
       cartoes: cartoesRemoto,
       faturasPagas: pagasRemoto,
-      avisosLidos: lidosRemoto
+      avisosLidos: lidosRemoto,
+      dividas: dividasRemoto
     })
 
     if (chave !== ultimoRemoto.current) {
@@ -126,6 +129,10 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso }) {
       setAvisosLidos((locais) =>
         primeiraVez ? limparAvisosLidos([...lidosRemoto, ...locais]) : lidosRemoto
       )
+
+      setDividas((locais) =>
+        primeiraVez ? unirPorId(dividasRemoto, locais) : dividasRemoto
+      )
     }
 
     localStorage.setItem(chaveMigracao, "1")
@@ -158,7 +165,8 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso }) {
       categoriasExtras,
       cartoes,
       faturasPagas,
-      avisosLidos
+      avisosLidos,
+      dividas
     }))
 
     const chave = JSON.stringify(dados)
@@ -172,7 +180,7 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso }) {
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
       .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
 
-  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos])
+  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas])
 
   return { sincronizado, erroSincronia }
 }

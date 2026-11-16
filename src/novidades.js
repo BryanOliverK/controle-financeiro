@@ -4,6 +4,15 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.6.0",
+    titulo: "Dívidas e empréstimos",
+    itens: [
+      "Em Planejar: anote o que você deve e o que te devem, com pagamentos parciais",
+      "Avisos quando uma dívida estiver perto de vencer",
+      "Testes automáticos rodam antes de cada publicação"
+    ]
+  },
+  {
     versao: "1.5.0",
     titulo: "Planejamento",
     itens: [
