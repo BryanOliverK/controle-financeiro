@@ -21,7 +21,7 @@ function Interruptor({ ligado, onAlternar, titulo, texto }) {
         <small>{texto}</small>
       </span>
 
-      <input type="checkbox" role="switch" checked={ligado} onChange={onAlternar} />
+      <input type="checkbox" role="switch" className="perfil-switch" checked={ligado} onChange={onAlternar} />
     </label>
   )
 }
@@ -98,7 +98,7 @@ function Perfil({
 
       <h2 className="titulo-secao">Perfil</h2>
 
-      <div className="perfil-topo">
+      <div className="perfil-hero">
         {usuario.photoURL ? (
           <img className="perfil-foto" src={usuario.photoURL} alt="" referrerPolicy="no-referrer" />
         ) : (
@@ -110,10 +110,10 @@ function Perfil({
         <div className="perfil-quem">
           <strong>{usuario.displayName || "Sem nome"}</strong>
           <small>{usuario.email}</small>
-          <small>
-            Entra com {nomeDoProvedor(usuario.providerData)}
+          <span className="perfil-chip">
+            {nomeDoProvedor(usuario.providerData)}
             {desde && ` · membro desde ${desde}`}
-          </small>
+          </span>
         </div>
       </div>
 
