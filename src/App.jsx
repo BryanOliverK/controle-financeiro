@@ -47,6 +47,7 @@ import {
 import { semCartao, semOculta } from './utils/historico'
 import { chaveFatura, infoCartao, limparFaturasPagas, registrarCartoes } from './utils/cartoes'
 import { listarCompromissos } from './utils/compromissos'
+import { fotoDeArquivo } from './utils/foto'
 import { infoConta, limparContas, limparTransferencias, registrarContas, semConta, validarTransferencia } from './utils/contas'
 import { comPagamento, limparDividas, semPagamento, transacaoDoPagamento, validarPagamento } from './utils/dividas'
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
@@ -138,6 +139,7 @@ function App() {
   const [dividas, setDividas] = useLocalStorage("dividas", [])
   const [contas, setContas] = useLocalStorage("contas", [])
   const [transferencias, setTransferencias] = useLocalStorage("transferencias", [])
+  const [foto, setFoto] = useLocalStorage("foto", "", { texto: true })
   const [modoEscuro, setModoEscuro] = useLocalStorage("modoEscuro", false)
   const [boasVindasVistas, setBoasVindasVistas] = useLocalStorage("boasVindasVistas", false)
 
@@ -165,8 +167,8 @@ function App() {
     usuario,
     mostrarAviso,
     pausado: excluindoConta,
-    dados: { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias },
-    alterar: { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas, setContas, setTransferencias }
+    dados: { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, foto },
+    alterar: { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas, setContas, setTransferencias, setFoto }
   })
 
 
@@ -614,6 +616,22 @@ function App() {
 
   function marcarAvisosLidos(ids) {
     setAvisosLidos((atuais) => limparAvisosLidos([...atuais, ...ids]))
+  }
+
+  // Foto de perfil
+
+  async function trocarFoto(arquivo) {
+    try {
+      setFoto(await fotoDeArquivo(arquivo))
+      mostrarAviso("Foto atualizada")
+    } catch (erro) {
+      mostrarAviso(erro instanceof Error ? erro.message : "Não foi possível usar essa imagem", "erro")
+    }
+  }
+
+  function removerFoto() {
+    setFoto("")
+    mostrarAviso("Foto removida")
   }
 
   // Excluir a conta (pede senha/Google; veja useLogin)
@@ -1411,6 +1429,9 @@ function App() {
           {aba === "perfil" && (
             <Perfil
               usuario={usuario}
+              foto={foto}
+              onTrocarFoto={trocarFoto}
+              onRemoverFoto={removerFoto}
               versao={NOVIDADES[0].versao}
               dados={{ transacoes: visiveis, caixinhas, contas, cartoes, dividas }}
               modoEscuro={modoEscuro}

@@ -2495,3 +2495,62 @@
 :is(.perfil, .contas, .dividas, .imp-janela, .confirmar-janela) input::placeholder {
   color: var(--text-muted);
 }
+
+/* Foto de perfil */
+
+.perfil-foto-area {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.perfil-foto-botao {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.perfil-foto-botao:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 3px;
+}
+
+.perfil-foto-camera {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--on-brand);
+  border: 2px solid var(--hero-bg);
+}
+
+.perfil-foto-acoes {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.perfil-foto-acoes button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--hero-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.perfil-foto-acoes button:hover {
+  opacity: 1;
+}

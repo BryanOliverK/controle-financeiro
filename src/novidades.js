@@ -8,6 +8,7 @@ export const NOVIDADES = [
     titulo: "Perfil",
     itens: [
       "Nova aba Perfil: nome, preferências, resumo da conta e backup num lugar só",
+      "Foto de perfil: escolha uma imagem sua, ela sincroniza entre seus aparelhos",
       "Trocar a senha por e-mail e excluir a conta com todos os dados"
     ]
   },

@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import Backup from "./Backup"
+import Icone from "./Icone"
 import ConfirmarAcao from "./ConfirmarAcao"
 import {
   LIMITE_NOME_PERFIL,
@@ -28,12 +29,13 @@ function Interruptor({ ligado, onAlternar, titulo, texto }) {
 
 // Perfil: dados da conta, preferências deste aparelho, backup e segurança.
 function Perfil({
-  usuario, versao, dados,
+  usuario, versao, dados, foto, onTrocarFoto, onRemoverFoto,
   modoEscuro, onModoEscuro, iniciarPrivado, onIniciarPrivado,
   onSalvarNome, onEnviarRedefinicao, onSair, onExcluirConta,
   onExportarBackup, onImportarBackup
 }) {
 
+  const inputFoto = useRef(null)
   const [nome, setNome] = useState(usuario.displayName || "")
   const [mensagem, setMensagem] = useState(null)
   const [excluindo, setExcluindo] = useState(false)
@@ -42,6 +44,7 @@ function Perfil({
   const [erroExclusao, setErroExclusao] = useState("")
   const [apagando, setApagando] = useState(false)
 
+  const imagem = foto || usuario.photoURL
   const porSenha = usaSenha(usuario.providerData)
   const resumo = resumoDaConta(dados)
   const desde = membroDesde(usuario.metadata?.creationTime)
@@ -99,13 +102,40 @@ function Perfil({
       <h2 className="titulo-secao">Perfil</h2>
 
       <div className="perfil-hero">
-        {usuario.photoURL ? (
-          <img className="perfil-foto" src={usuario.photoURL} alt="" referrerPolicy="no-referrer" />
-        ) : (
-          <span className="perfil-foto perfil-iniciais" aria-hidden="true">
-            {iniciais(usuario.displayName, usuario.email)}
-          </span>
-        )}
+        <div className="perfil-foto-area">
+          <button
+            type="button"
+            className="perfil-foto-botao"
+            onClick={() => inputFoto.current?.click()}
+            aria-label="Alterar foto de perfil"
+            title="Alterar foto"
+          >
+            {imagem ? (
+              <img className="perfil-foto" src={imagem} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              <span className="perfil-foto perfil-iniciais" aria-hidden="true">
+                {iniciais(usuario.displayName, usuario.email)}
+              </span>
+            )}
+
+            <span className="perfil-foto-camera" aria-hidden="true"><Icone nome="camera" tamanho={16} /></span>
+          </button>
+
+          <input
+            ref={inputFoto}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            hidden
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0]
+              e.target.value = ""
+
+              if (arquivo) {
+                onTrocarFoto(arquivo)
+              }
+            }}
+          />
+        </div>
 
         <div className="perfil-quem">
           <strong>{usuario.displayName || "Sem nome"}</strong>
@@ -113,6 +143,14 @@ function Perfil({
           <span className="perfil-chip">
             {nomeDoProvedor(usuario.providerData)}
             {desde && ` · membro desde ${desde}`}
+          </span>
+
+          <span className="perfil-foto-acoes">
+            <button type="button" onClick={() => inputFoto.current?.click()}>
+              {foto ? "Trocar foto" : "Adicionar foto"}
+            </button>
+
+            {foto && <button type="button" onClick={onRemoverFoto}>Remover</button>}
           </span>
         </div>
       </div>
