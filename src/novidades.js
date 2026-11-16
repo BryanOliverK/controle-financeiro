@@ -4,6 +4,14 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.9.0",
+    titulo: "Perfil",
+    itens: [
+      "Nova aba Perfil: nome, preferências, resumo da conta e backup num lugar só",
+      "Trocar a senha por e-mail e excluir a conta com todos os dados"
+    ]
+  },
+  {
     versao: "1.8.0",
     titulo: "Importar extrato",
     itens: [

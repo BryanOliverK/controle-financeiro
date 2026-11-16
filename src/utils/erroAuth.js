@@ -13,6 +13,8 @@ const MENSAGENS = {
   "auth/weak-password": "Escolha uma senha mais forte (mínimo de 6 caracteres).",
   "auth/too-many-requests": "Muitas tentativas. Espere um pouco e tente de novo.",
   "auth/network-request-failed": "Sem conexão com a internet. Confira e tente de novo.",
+  "auth/requires-recent-login": "Por segurança, entre de novo antes de fazer isso.",
+  "auth/user-mismatch": "Essa não é a conta que está conectada.",
   "auth/operation-not-allowed": "Esse tipo de login não está ativado no Firebase."
 }
 

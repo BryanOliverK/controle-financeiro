@@ -13,7 +13,7 @@ import { limparOrcamentos } from '../utils/orcamentos'
 // Sincronização com o Firestore (documento usuarios/{uid}).
 // IMPORTANTE: a ordem dos campos na "chave" do listener e na do envio precisa
 // ser a mesma, senão o app acha que algo mudou e fica reenviando.
-export function useSincronizacao({ usuario, dados, alterar, mostrarAviso }) {
+export function useSincronizacao({ usuario, dados, alterar, mostrarAviso, pausado = false }) {
   const [sincronizado, setSincronizado] = useState(false)
   const [erroSincronia, setErroSincronia] = useState("")
   const ultimoRemoto = useRef("")
@@ -32,7 +32,7 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso }) {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-  if (!usuario) {
+  if (!usuario || pausado) {
     return
   }
 
@@ -158,13 +158,13 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso }) {
           : "Não foi possível carregar seus dados da nuvem. Confira sua conexão e tente de novo."
       )
     })
-  }, [usuario])
+  }, [usuario, pausado])
 
   // Envia as mudanças para a nuvem
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!usuario || !sincronizado) {
+    if (!usuario || !sincronizado || pausado) {
       return
     }
 
@@ -195,7 +195,7 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso }) {
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
       .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
 
-  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias])
+  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, pausado])
 
   return { sincronizado, erroSincronia }
 }

@@ -8,6 +8,7 @@ import FormularioTransacao from './components/FormularioTransacao'
 import Avisos from './components/Avisos'
 import Cartoes from './components/Cartoes'
 import Contas from './components/Contas'
+import Perfil from './components/Perfil'
 import Dividas from './components/Dividas'
 import Compromissos from './components/Compromissos'
 import GerenciarCategorias from './components/GerenciarCategorias'
@@ -17,7 +18,6 @@ import LimparHistorico from './components/LimparHistorico'
 import Categorias from './components/Categorias'
 import Caixinhas from './components/Caixinhas'
 import AjudaAtalhos from './components/AjudaAtalhos'
-import Backup from './components/Backup'
 import BoasVindas from './components/BoasVindas'
 import ComparacaoMeses from './components/ComparacaoMeses'
 import Orcamentos from './components/Orcamentos'
@@ -26,6 +26,8 @@ import Icone from './components/Icone'
 import Vazio from './components/Vazio'
 import Login from './components/Login'
 import TelaCarregando from './components/TelaCarregando'
+
+import { NOVIDADES } from './novidades'
 
 import { useAviso } from './hooks/useAviso'
 import { useAtalhos } from './hooks/useAtalhos'
@@ -98,7 +100,8 @@ const ABAS = [
   { id: "contas", icone: "carteira", nome: "Contas" },
   { id: "planejar", icone: "calendario", nome: "Planejar" },
   { id: "avisos", icone: "sino", nome: "Avisos" },
-  { id: "nova", icone: "adicionar", nome: "Adicionar" }
+  { id: "nova", icone: "adicionar", nome: "Adicionar" },
+  { id: "perfil", icone: "perfil", nome: "Perfil" }
 ]
 
 function App() {
@@ -106,7 +109,8 @@ function App() {
   // Estados da tela
 
   const [aba, setAba] = useState("inicio")
-  const [privado, setPrivado] = useState(true)
+  const [iniciarPrivado, setIniciarPrivado] = useLocalStorage("iniciarPrivado", true)
+  const [privado, setPrivado] = useState(iniciarPrivado)
   const [mes, setMes] = useState("todos")
 
   const [busca, setBusca] = useState("")
@@ -150,12 +154,17 @@ function App() {
 
   const {
     usuario, verificandoLogin, erroLogin,
-    entrarComGoogle, entrarComEmail, criarContaComEmail, recuperarSenha, sair
+    entrarComGoogle, entrarComEmail, criarContaComEmail, recuperarSenha, sair,
+    salvarNome, enviarRedefinicaoDeSenha, excluirConta: excluirContaDeLogin
   } = useLogin()
+
+  // Enquanto a conta é excluída, a sincronização fica parada (senão recriaria os dados)
+  const [excluindoConta, setExcluindoConta] = useState(false)
 
   const { sincronizado, erroSincronia } = useSincronizacao({
     usuario,
     mostrarAviso,
+    pausado: excluindoConta,
     dados: { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias },
     alterar: { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas, setContas, setTransferencias }
   })
@@ -605,6 +614,25 @@ function App() {
 
   function marcarAvisosLidos(ids) {
     setAvisosLidos((atuais) => limparAvisosLidos([...atuais, ...ids]))
+  }
+
+  // Excluir a conta (pede senha/Google; veja useLogin)
+
+  async function excluirMinhaConta(senha) {
+
+    setExcluindoConta(true)
+
+    // Dá um instante para a sincronização parar de verdade antes de apagar
+    await new Promise((resolver) => setTimeout(resolver, 120))
+
+    const resultado = await excluirContaDeLogin(senha)
+
+    // Só volta a sincronizar se a nuvem ainda tem os dados
+    if (!resultado.nuvemApagada) {
+      setExcluindoConta(false)
+    }
+
+    return resultado.erro
   }
 
   // Importar extrato
@@ -1223,7 +1251,7 @@ function App() {
           </div>
         )}
 
-        {!["nova", "caixinhas", "contas", "planejar", "avisos"].includes(aba) && mesesDisponiveis.length > 0 && (
+        {!["nova", "caixinhas", "contas", "planejar", "avisos", "perfil"].includes(aba) && mesesDisponiveis.length > 0 && (
           <div className="barra-mes">
             <select
               value={mesAtivo}
@@ -1278,7 +1306,6 @@ function App() {
                 ))}
               </div>
 
-              <Backup onExportar={exportarBackup} onImportar={importarBackup} />
             </>
           )}
 
@@ -1379,6 +1406,24 @@ function App() {
                 onDefinir={definirOrcamento}
               />
             </>
+          )}
+
+          {aba === "perfil" && (
+            <Perfil
+              usuario={usuario}
+              versao={NOVIDADES[0].versao}
+              dados={{ transacoes: visiveis, caixinhas, contas, cartoes, dividas }}
+              modoEscuro={modoEscuro}
+              onModoEscuro={() => setModoEscuro(!modoEscuro)}
+              iniciarPrivado={iniciarPrivado}
+              onIniciarPrivado={() => setIniciarPrivado(!iniciarPrivado)}
+              onSalvarNome={salvarNome}
+              onEnviarRedefinicao={enviarRedefinicaoDeSenha}
+              onSair={sair}
+              onExcluirConta={excluirMinhaConta}
+              onExportarBackup={exportarBackup}
+              onImportarBackup={importarBackup}
+            />
           )}
 
           {aba === "contas" && (
