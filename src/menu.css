@@ -1,0 +1,274 @@
+/* ========================================= */
+/* MENU LATERAL (computador e tablet)        */
+/* Importar DEPOIS do menu-mobile.css.       */
+/* No celular nada muda: vale o menu de lá.  */
+/* ========================================= */
+
+/* Foto ou iniciais (também aparece no menu do celular) */
+
+.sidebar-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--hero-bg-2), var(--hero-bg));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.sidebar-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (min-width: 701px) {
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 88px;
+    height: 100vh;
+    height: 100dvh;
+    padding: 16px 10px;
+    overflow: hidden;
+  }
+
+  .sidebar .menu-lista {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* A lista rola sozinha quando a janela é baixa (sem barra de rolagem) */
+  .sidebar .menu-lista-interno {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+    overscroll-behavior: contain;
+  }
+
+  .sidebar .menu-lista-interno::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Itens: sem bolinha em volta do ícone */
+
+  .sidebar-item {
+    position: relative;
+    flex-shrink: 0;
+    gap: 4px;
+    padding: 9px 4px;
+    border-radius: 14px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .sidebar-icone,
+  .sidebar-item.ativo .sidebar-icone {
+    position: relative;
+    width: auto;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    background: none;
+    color: inherit;
+  }
+
+  .sidebar-item:hover {
+    background-color: var(--surface-2);
+    color: var(--text);
+  }
+
+  .sidebar-item:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: -2px;
+  }
+
+  .sidebar-item.ativo,
+  .sidebar-item.ativo:hover {
+    background-color: var(--brand-soft);
+    color: var(--brand);
+  }
+
+  /* Barrinha do item ativo */
+  .sidebar-item.ativo::before {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 12px;
+    bottom: 12px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background-color: var(--brand);
+  }
+
+  /* Filete entre grupos */
+  .sidebar-item.inicio-grupo {
+    margin-top: 12px;
+  }
+
+  .sidebar-item.inicio-grupo::after {
+    content: "";
+    position: absolute;
+    top: -7px;
+    left: 14px;
+    right: 14px;
+    height: 1px;
+    background-color: var(--border);
+  }
+
+  /* Botão principal (Adicionar) */
+  .sidebar-item.destaque {
+    margin-top: 12px;
+    background-color: var(--brand);
+    color: var(--on-brand);
+  }
+
+  .sidebar-item.destaque:hover {
+    background-color: var(--brand-hover);
+    color: var(--on-brand);
+  }
+
+  .sidebar-item.destaque.ativo,
+  .sidebar-item.destaque.ativo:hover {
+    background-color: var(--brand);
+    color: var(--on-brand);
+    box-shadow: 0 0 0 3px var(--brand-soft);
+  }
+
+  .sidebar-item.destaque.ativo::before {
+    display: none;
+  }
+
+  /* Perfil: sempre visível embaixo, mesmo se a lista rolar */
+  .sidebar-item.rodape {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    background-color: var(--surface);
+    box-shadow: 0 -10px 12px -6px var(--surface);
+  }
+
+  .sidebar-item.rodape.ativo,
+  .sidebar-item.rodape.ativo:hover {
+    background-image: linear-gradient(var(--brand-soft), var(--brand-soft));
+  }
+
+  .sidebar-item.rodape .sidebar-avatar {
+    box-shadow: 0 0 0 2px var(--surface);
+  }
+
+  .sidebar-item.ativo .sidebar-avatar {
+    box-shadow: 0 0 0 2px var(--brand);
+  }
+
+  .sidebar-selo {
+    top: -5px;
+    right: -8px;
+  }
+}
+
+/* ----- Janela baixa: tudo mais compacto ----- */
+
+@media (min-width: 701px) and (max-height: 820px) {
+
+  .sidebar {
+    padding: 10px 8px;
+  }
+
+  .sidebar-item {
+    padding: 6px 4px;
+    gap: 2px;
+    font-size: 10px;
+  }
+
+  .sidebar-item.inicio-grupo,
+  .sidebar-item.destaque {
+    margin-top: 8px;
+  }
+
+  .sidebar-item.inicio-grupo::after {
+    top: -5px;
+  }
+}
+
+/* Muito baixa e estreita: só os ícones (o nome aparece ao passar o mouse) */
+@media (min-width: 701px) and (max-width: 1199px) and (max-height: 640px) {
+
+  .sidebar-nome {
+    display: none;
+  }
+
+  .sidebar-item {
+    padding: 9px 4px;
+  }
+}
+
+/* ----- Tela larga: menu expandido, ícone ao lado do nome ----- */
+
+@media (min-width: 1200px) {
+
+  .sidebar {
+    width: 232px;
+    padding: 20px 14px;
+  }
+
+  .sidebar-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .sidebar-nome {
+    flex: 1;
+  }
+
+  .sidebar-item.ativo::before {
+    left: -14px;
+  }
+
+  .sidebar-item.inicio-grupo::after {
+    left: 14px;
+    right: 14px;
+  }
+
+  .sidebar-item.destaque {
+    justify-content: center;
+  }
+
+  .sidebar-item.destaque .sidebar-nome {
+    flex: 0 0 auto;
+  }
+
+  .sidebar-item.rodape .sidebar-avatar {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (min-width: 1200px) and (max-height: 820px) {
+
+  .sidebar {
+    padding: 12px 12px;
+  }
+
+  .sidebar-item {
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+}

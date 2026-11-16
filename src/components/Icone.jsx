@@ -289,6 +289,12 @@ const CAMINHOS = {
       <circle cx="12" cy="12.5" r="3.2" />
     </>
   ),
+  trocar: (
+    <>
+      <path d="M7 20V5M7 5L3.5 8.5M7 5l3.5 3.5" />
+      <path d="M17 4v15M17 19l-3.5-3.5M17 19l3.5-3.5" />
+    </>
+  ),
   perfil: (
     <>
       <circle cx="12" cy="8" r="4" />
@@ -311,7 +317,7 @@ const CAMINHOS = {
   )
 }
 
-function Icone({ nome, tamanho = 20, className }) {
+function Icone({ nome, tamanho = 20, className, traco = 1.8 }) {
   const desenho = CAMINHOS[nome] ?? CAMINHOS.outros
 
   return (
@@ -322,7 +328,7 @@ function Icone({ nome, tamanho = 20, className }) {
       height={tamanho}
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth={traco}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

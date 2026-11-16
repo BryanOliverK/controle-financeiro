@@ -48,6 +48,7 @@ import { semCartao, semOculta } from './utils/historico'
 import { chaveFatura, infoCartao, limparFaturasPagas, registrarCartoes } from './utils/cartoes'
 import { listarCompromissos } from './utils/compromissos'
 import { fotoDeArquivo } from './utils/foto'
+import { iniciais } from './utils/perfil'
 import { infoConta, limparContas, limparTransferencias, registrarContas, semConta, validarTransferencia } from './utils/contas'
 import { comPagamento, limparDividas, semPagamento, transacaoDoPagamento, validarPagamento } from './utils/dividas'
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
@@ -81,6 +82,7 @@ import { validarTransacao } from './utils/validacao'
 import './App.css'
 import './categorias.css'
 import './menu-mobile.css'
+import './menu.css'
 import './extras.css'
 import './caixinhas.css'
 import './login.css'
@@ -94,15 +96,15 @@ const FORM_VAZIO = {
 }
 
 const ABAS = [
-  { id: "inicio", icone: "inicio", nome: "Início" },
-  { id: "transacoes", icone: "transacoes", nome: "Transações" },
-  { id: "graficos", icone: "graficos", nome: "Gráficos" },
-  { id: "caixinhas", icone: "caixinha", nome: "Caixinhas" },
-  { id: "contas", icone: "carteira", nome: "Contas" },
-  { id: "planejar", icone: "calendario", nome: "Planejar" },
-  { id: "avisos", icone: "sino", nome: "Avisos" },
-  { id: "nova", icone: "adicionar", nome: "Adicionar" },
-  { id: "perfil", icone: "perfil", nome: "Perfil" }
+  { id: "inicio", icone: "inicio", nome: "Início", grupo: "principal" },
+  { id: "transacoes", icone: "trocar", nome: "Transações", grupo: "principal" },
+  { id: "graficos", icone: "graficos", nome: "Gráficos", grupo: "principal" },
+  { id: "caixinhas", icone: "caixinha", nome: "Caixinhas", grupo: "dinheiro" },
+  { id: "contas", icone: "carteira", nome: "Contas", grupo: "dinheiro" },
+  { id: "planejar", icone: "calendario", nome: "Planejar", grupo: "dinheiro" },
+  { id: "avisos", icone: "sino", nome: "Avisos", grupo: "acoes" },
+  { id: "nova", icone: "adicionar", nome: "Adicionar", grupo: "acoes", destaque: true },
+  { id: "perfil", icone: "perfil", nome: "Perfil", grupo: "conta", rodape: true }
 ]
 
 function App() {
@@ -228,7 +230,11 @@ function App() {
 
   const naoLidos = avisos.filter((a) => !lidosSet.has(a.id)).length + (atualizacaoDisponivel ? 1 : 0)
 
-  const abasComSelo = ABAS.map((a) => (a.id === "avisos" ? { ...a, selo: naoLidos } : a))
+  const abasComSelo = ABAS.map((a) => {
+    if (a.id === "avisos") return { ...a, selo: naoLidos }
+    if (a.id === "perfil") return { ...a, avatar: { foto: foto || usuario?.photoURL || "", iniciais: iniciais(usuario?.displayName, usuario?.email) } }
+    return a
+  })
 
   const mesAtivo =
     mes === "todos" || mesesDisponiveis.includes(mes) ? mes : "todos"
