@@ -4,6 +4,15 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.10.0",
+    titulo: "Mais rápido e mais bonito",
+    itens: [
+      "Lançamento rápido: digite \"mercado 85\" (ou \"+ salário 3000\") no topo do Início e das Transações",
+      "Sugestões ao digitar a descrição, com categoria e valor do que você já lançou",
+      "Novo menu lateral, total de cada dia nas Transações e efeitos suaves (dá para desligar no Modo leve do Perfil)"
+    ]
+  },
+  {
     versao: "1.9.0",
     titulo: "Perfil",
     itens: [

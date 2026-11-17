@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Resumo from './components/Resumo'
+import LancamentoRapido from './components/LancamentoRapido'
 import Transacao from './components/Transacao'
 import FormularioTransacao from './components/FormularioTransacao'
 import Avisos from './components/Avisos'
@@ -417,6 +418,40 @@ function App() {
     }
 
     setForm(FORM_VAZIO)
+  }
+
+  // Lançamento rápido ("mercado 85"): já nasce pronto, com Desfazer
+  function lancarRapido({ descricao, valor, tipo, categoria, contaId }) {
+
+    const nova = {
+      id: novoId(),
+      descricao,
+      valor: arredondar(valor),
+      tipo,
+      categoria,
+      ...(contaId && contas.some((c) => c.id === contaId) ? { contaId } : {}),
+      data: new Date().toISOString()
+    }
+
+    const limite = orcamentos[categoria]
+    const gastoAntes = gastoDaCategoria(visiveis, categoria, chaveMes(nova.data))
+
+    const alerta = tipo === "saida" && limite
+      ? mensagemAlerta(categoria, gastoAntes, arredondar(gastoAntes + nova.valor), limite)
+      : null
+
+    setTransacoes((atuais) => [...atuais, nova])
+
+    const texto = `${tipo === "entrada" ? "Entrada" : "Saída"} de ${brl(nova.valor)}: ${descricao}`
+
+    mostrarAviso(
+      alerta ? `${texto}. ${alerta}` : texto,
+      alerta && alerta.includes("estourado") ? "erro" : "info",
+      () => {
+        setTransacoes((atuais) => atuais.filter((t) => t.id !== nova.id))
+        fecharAviso()
+      }
+    )
   }
 
   function iniciarEdicao(id) {
@@ -1306,6 +1341,8 @@ function App() {
                 />
               )}
 
+              <LancamentoRapido transacoes={visiveis} onLancar={lancarRapido} />
+
               <Resumo
                 saldo={saldo}
                 entradas={entradas}
@@ -1347,6 +1384,8 @@ function App() {
 
           {aba === "transacoes" && (
             <>
+              <LancamentoRapido transacoes={visiveis} onLancar={lancarRapido} />
+
               <div className="filtros">
                 <input
                   type="text"
@@ -1553,6 +1592,7 @@ function App() {
           {aba === "nova" && (
             <>
               <FormularioTransacao
+                historico={visiveis}
                 form={form}
                 editando={editandoId !== null}
                 cartoes={cartoes}
