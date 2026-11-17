@@ -30,7 +30,7 @@ function Interruptor({ ligado, onAlternar, titulo, texto }) {
 // Perfil: dados da conta, preferências deste aparelho, backup e segurança.
 function Perfil({
   usuario, versao, dados, foto, onTrocarFoto, onRemoverFoto,
-  modoEscuro, onModoEscuro, iniciarPrivado, onIniciarPrivado,
+  modoEscuro, onModoEscuro, iniciarPrivado, onIniciarPrivado, modoLeve, onModoLeve,
   onSalvarNome, onEnviarRedefinicao, onSair, onExcluirConta,
   onExportarBackup, onImportarBackup
 }) {
@@ -186,6 +186,13 @@ function Perfil({
           onAlternar={onModoEscuro}
           titulo="Modo escuro"
           texto="Tema escuro em todo o app."
+        />
+
+        <Interruptor
+          ligado={modoLeve}
+          onAlternar={onModoLeve}
+          titulo="Modo leve"
+          texto="Desliga animações e efeitos. Ajuda em aparelhos mais fracos e em quem se incomoda com movimento."
         />
 
         <Interruptor

@@ -1,0 +1,89 @@
+/* ========================================= */
+/* EFEITOS (FX)                              */
+/* Importar por último. O "Modo leve" (ou o  */
+/* aparelho pedindo menos movimento) desliga */
+/* tudo daqui e das outras animações.        */
+/* ========================================= */
+
+/* ----- Lista em cascata: cada linha entra um instante depois da anterior ----- */
+
+@keyframes fx-item {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.transacoes .transacao {
+  animation: fx-item 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.transacoes .transacao:nth-of-type(2) { animation-delay: 0.04s; }
+.transacoes .transacao:nth-of-type(3) { animation-delay: 0.08s; }
+.transacoes .transacao:nth-of-type(4) { animation-delay: 0.12s; }
+.transacoes .transacao:nth-of-type(5) { animation-delay: 0.16s; }
+.transacoes .transacao:nth-of-type(6) { animation-delay: 0.20s; }
+.transacoes .transacao:nth-of-type(7) { animation-delay: 0.24s; }
+.transacoes .transacao:nth-of-type(8) { animation-delay: 0.28s; }
+
+/* ----- Cartões e botões respondem ao mouse e ao toque ----- */
+
+.sidebar-item,
+.btn-salvar,
+.btn-cancelar,
+.vazio-acao,
+.fatura-botao {
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+.sidebar-item:active,
+.btn-salvar:active,
+.btn-cancelar:active,
+.fatura-botao:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .card,
+  .transacao {
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card:hover,
+  .transacao:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.09);
+  }
+}
+
+/* ----- Janelas com fundo desfocado ----- */
+
+.ajuda-fundo {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ----- Troca de tema suave ----- */
+
+.app,
+.sidebar,
+.transacao,
+.perfil-bloco {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ----- MODO LEVE: nada se mexe, nada desfoca ----- */
+
+.modo-leve,
+.modo-leve *,
+.modo-leve *::before,
+.modo-leve *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.modo-leve .card:hover,
+.modo-leve .transacao:hover {
+  transform: none;
+}

@@ -1,7 +1,13 @@
 import Icone from "./Icone"
 import { brl } from "../utils/formatar"
+import { useContagem } from "../hooks/useContagem"
 
-function Resumo({ saldo, entradas, saidas }) {
+// Os valores contam até o número final (animar = false mostra direto)
+function Resumo({ saldo, entradas, saidas, animar = true }) {
+
+    const saldoVisto = useContagem(saldo, animar)
+    const entradasVistas = useContagem(entradas, animar)
+    const saidasVistas = useContagem(saidas, animar)
 
     return (
         <div className="resumo">
@@ -11,7 +17,7 @@ function Resumo({ saldo, entradas, saidas }) {
                     <span className="card-icone"><Icone nome="carteira" tamanho={18} /></span>
                     Saldo
                 </h3>
-                <p>{brl(saldo)}</p>
+                <p>{brl(saldoVisto)}</p>
             </div>
 
             <div className="card entrada">
@@ -19,7 +25,7 @@ function Resumo({ saldo, entradas, saidas }) {
                     <span className="card-icone"><Icone nome="setaEntrada" tamanho={18} /></span>
                     Entradas
                 </h3>
-                <p>{brl(entradas)}</p>
+                <p>{brl(entradasVistas)}</p>
             </div>
 
             <div className="card saida">
@@ -27,7 +33,7 @@ function Resumo({ saldo, entradas, saidas }) {
                     <span className="card-icone"><Icone nome="setaSaida" tamanho={18} /></span>
                     Saídas
                 </h3>
-                <p>{brl(saidas)}</p>
+                <p>{brl(saidasVistas)}</p>
             </div>
 
         </div>

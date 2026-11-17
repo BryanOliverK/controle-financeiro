@@ -49,6 +49,7 @@ import { chaveFatura, infoCartao, limparFaturasPagas, registrarCartoes } from '.
 import { listarCompromissos } from './utils/compromissos'
 import { fotoDeArquivo } from './utils/foto'
 import { iniciais } from './utils/perfil'
+import { preferePoucoMovimento } from './utils/animacao'
 import { infoConta, limparContas, limparTransferencias, registrarContas, semConta, validarTransferencia } from './utils/contas'
 import { comPagamento, limparDividas, semPagamento, transacaoDoPagamento, validarPagamento } from './utils/dividas'
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
@@ -85,6 +86,7 @@ import './App.css'
 import './categorias.css'
 import './menu-mobile.css'
 import './menu.css'
+import './fx.css'
 import './extras.css'
 import './caixinhas.css'
 import './login.css'
@@ -116,6 +118,7 @@ function App() {
   const [aba, setAba] = useState("inicio")
   const [iniciarPrivado, setIniciarPrivado] = useLocalStorage("iniciarPrivado", true)
   const [privado, setPrivado] = useState(iniciarPrivado)
+  const [modoLeve, setModoLeve] = useLocalStorage("modoLeve", preferePoucoMovimento())
   const [mes, setMes] = useState("todos")
 
   const [busca, setBusca] = useState("")
@@ -1214,7 +1217,7 @@ function App() {
 
   // O que aparece na tela
 
-  const classesApp = ["app", modoEscuro && "modo-escuro", privado && "privado"]
+  const classesApp = ["app", modoEscuro && "modo-escuro", privado && "privado", modoLeve && "modo-leve"]
     .filter(Boolean)
     .join(" ")
 
@@ -1307,6 +1310,7 @@ function App() {
                 saldo={saldo}
                 entradas={entradas}
                 saidas={saidas}
+                animar={!modoLeve}
               />
 
               {visiveis.length > 0 && <Previsao previsao={previsao} />}
@@ -1471,6 +1475,8 @@ function App() {
               onModoEscuro={() => setModoEscuro(!modoEscuro)}
               iniciarPrivado={iniciarPrivado}
               onIniciarPrivado={() => setIniciarPrivado(!iniciarPrivado)}
+              modoLeve={modoLeve}
+              onModoLeve={() => setModoLeve(!modoLeve)}
               onSalvarNome={salvarNome}
               onEnviarRedefinicao={enviarRedefinicaoDeSenha}
               onSair={sair}
