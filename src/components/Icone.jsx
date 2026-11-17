@@ -289,6 +289,12 @@ const CAMINHOS = {
       <circle cx="12" cy="12.5" r="3.2" />
     </>
   ),
+  busca: (
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M20 20l-4.2-4.2" />
+    </>
+  ),
   trocar: (
     <>
       <path d="M7 20V5M7 5L3.5 8.5M7 5l3.5 3.5" />

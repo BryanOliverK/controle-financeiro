@@ -357,9 +357,15 @@ select:focus-visible {
 
 .filtros {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.filtros input[type="text"] {
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 /* Formulário em grade: tipo e categoria ocupam a linha toda */
@@ -966,6 +972,32 @@ select:focus-visible {
   margin: 0;
 }
 
+.vazio-titulo {
+  font-size: 16px;
+  color: var(--text);
+}
+
+.vazio-acao {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 12px;
+  background-color: var(--brand);
+  color: var(--on-brand);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+.vazio-acao:hover { background-color: var(--brand-hover); }
+.vazio-acao:active { transform: scale(0.97); }
+.vazio-acao:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
 .vazio-icone {
   display: grid;
   place-items: center;
@@ -1089,12 +1121,26 @@ select:focus-visible {
 }
 
 .titulo-data {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 10px;
   color: var(--text-muted);
   letter-spacing: 0.5px;
 }
+
+.titulo-data-total {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.titulo-data-total.positivo { color: var(--entrada); }
+.titulo-data-total.negativo { color: var(--saida); }
 
 .grupo-data .transacao {
   margin-bottom: 8px;

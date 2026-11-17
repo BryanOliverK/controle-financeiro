@@ -60,12 +60,14 @@ import {
   filtrar,
   gastosPorCategoria,
   listarMeses,
-  ordenar
+  ordenar,
+  saldoDoDia
 } from './utils/calculos'
 import { baixarBackup, lerBackup } from './utils/backup'
 import { baixarCSV } from './utils/exportar'
 import {
   arredondar,
+  brl,
   chaveMes,
   contar,
   dataParaIso,
@@ -1322,7 +1324,13 @@ function App() {
 
               <div className="transacoes">
                 {ultimasTransacoes.length === 0 && (
-                  <Vazio icone="transacoes">Nenhuma transação ainda.</Vazio>
+                  <Vazio
+                    icone="transacoes"
+                    titulo="Nada por aqui ainda"
+                    acao={{ texto: "Adicionar transação", icone: "adicionar", onClick: () => mudarAba("nova") }}
+                  >
+                    Lance sua primeira entrada ou saída e ela aparece aqui.
+                  </Vazio>
                 )}
 
                 {ultimasTransacoes.map((transacao) => (
@@ -1384,14 +1392,33 @@ function App() {
 
               <div className="transacoes">
                 {transacoesOrdenadas.length === 0 && (
-                  <Vazio icone="transacoes">Nenhuma transação encontrada.</Vazio>
+                  transacoesDoMes.length === 0 ? (
+                    <Vazio
+                      icone="transacoes"
+                      titulo="Nenhuma transação neste mês"
+                      acao={{ texto: "Adicionar transação", icone: "adicionar", onClick: () => mudarAba("nova") }}
+                    >
+                      Troque de mês no topo ou lance uma nova transação.
+                    </Vazio>
+                  ) : (
+                    <Vazio
+                      icone="busca"
+                      titulo="Nada encontrado"
+                      acao={{ texto: "Limpar filtros", onClick: () => { setBusca(""); setFiltroTipo("todos") } }}
+                    >
+                      Nenhuma transação combina com a busca ou o filtro.
+                    </Vazio>
+                  )
                 )}
 
                 {transacoesPorData.map(([data, grupo]) => (
                   <div className="grupo-data" key={data}>
 
                     <h3 className="titulo-data">
-                      {data}
+                      <span>{data}</span>
+                      <span className={`titulo-data-total valor-privado ${saldoDoDia(grupo) < 0 ? "negativo" : "positivo"}`}>
+                        {saldoDoDia(grupo) > 0 ? "+" : saldoDoDia(grupo) < 0 ? "−" : ""}{brl(Math.abs(saldoDoDia(grupo)))}
+                      </span>
                     </h3>
 
                     {grupo.map((transacao) => (

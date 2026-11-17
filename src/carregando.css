@@ -222,3 +222,83 @@
     transition: none;
   }
 }
+
+
+/* ========================= */
+/* ESQUELETO (sincronização) */
+/* ========================= */
+
+.tela-carregando {
+  position: relative;
+  overflow: hidden;
+}
+
+.esqueleto {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 24px;
+  padding: 20px;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.esqueleto-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 64px;
+  flex-shrink: 0;
+  padding: 14px 10px;
+  border-radius: 16px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.esqueleto-conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.esqueleto-duplo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.esq-bloco {
+  display: block;
+  border-radius: 14px;
+  background: linear-gradient(90deg, var(--border) 0%, var(--surface-2) 50%, var(--border) 100%);
+  background-size: 200% 100%;
+  animation: esqueleto-brilho 1.4s ease-in-out infinite;
+}
+
+.esq-item { height: 38px; }
+.esq-titulo { width: 55%; height: 34px; }
+.esq-hero { height: 130px; }
+.esq-card { height: 84px; }
+.esq-linha { height: 60px; }
+
+@keyframes esqueleto-brilho {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.carregando-card {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 700px) {
+  .esqueleto { padding: 14px; }
+  .esqueleto-menu { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esq-bloco { animation: none; }
+}

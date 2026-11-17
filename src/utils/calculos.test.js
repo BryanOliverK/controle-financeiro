@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
 import {
-  agruparPorData, calcularResumo, filtrar, gastosPorCategoria, listarMeses, ordenar
+  agruparPorData, calcularResumo, filtrar, gastosPorCategoria, listarMeses, ordenar, saldoDoDia
 } from "./calculos"
 
 const t = (id, tipo, valor, extra = {}) => ({
@@ -116,5 +116,16 @@ describe("listarMeses e agruparPorData", () => {
     expect(grupos).toHaveLength(1)
     expect(grupos[0][0]).toBe("HOJE")
     expect(grupos[0][1]).toHaveLength(2)
+  })
+})
+
+describe("saldoDoDia", () => {
+  it("soma entradas e subtrai saídas sem erro de centavos", () => {
+    expect(saldoDoDia([t(1, "entrada", 100), t(2, "saida", 0.1), t(3, "saida", 0.2)])).toBe(99.7)
+  })
+
+  it("ignora caixinha e lista vazia", () => {
+    expect(saldoDoDia([t(1, "saida", 50, { categoria: "caixinha" }), t(2, "saida", 10)])).toBe(-10)
+    expect(saldoDoDia([])).toBe(0)
   })
 })

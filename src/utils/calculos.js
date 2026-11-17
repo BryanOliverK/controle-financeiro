@@ -109,3 +109,17 @@ export function agruparPorData(transacoes) {
 
   return [...grupos.entries()]
 }
+
+// Quanto o dia somou: entradas menos saídas (em centavos, sem erro de arredondamento).
+// Guardar/retirar de caixinha não conta, é só dinheiro mudando de lugar.
+export function saldoDoDia(grupo) {
+  let centavos = 0
+
+  for (const t of grupo) {
+    if (t.categoria === "caixinha") continue
+    const c = emCentavos(t.valor)
+    centavos += t.tipo === "entrada" ? c : t.tipo === "saida" ? -c : 0
+  }
+
+  return centavos / 100
+}

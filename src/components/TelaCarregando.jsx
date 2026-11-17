@@ -35,6 +35,25 @@ function TelaCarregando({ etapa = 0, modoEscuro, erro = "" }) {
       role="status"
       aria-live="polite"
     >
+      {/* Silhueta do app enquanto os dados chegam (só aparece na sincronização) */}
+      {etapa === 1 && !erro && (
+        <div className="esqueleto" aria-hidden="true">
+          <div className="esqueleto-menu">
+            {[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className="esq-bloco esq-item" />)}
+          </div>
+
+          <div className="esqueleto-conteudo">
+            <span className="esq-bloco esq-titulo" />
+            <span className="esq-bloco esq-hero" />
+            <div className="esqueleto-duplo">
+              <span className="esq-bloco esq-card" />
+              <span className="esq-bloco esq-card" />
+            </div>
+            {[0, 1, 2].map((i) => <span key={i} className="esq-bloco esq-linha" />)}
+          </div>
+        </div>
+      )}
+
       <div className="carregando-card">
 
         <span className="carregando-icone"><Icone nome="carteira" tamanho={32} /></span>
