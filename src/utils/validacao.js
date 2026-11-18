@@ -6,11 +6,11 @@ export const LIMITE_DESCRICAO = 40
 // Usada tanto para adicionar quanto para editar.
 export function validarTransacao({ descricao, valor, tipo, categoria }) {
   if (descricao.trim() === "") {
-    return "Adicione uma Descrição!"
+    return "Adicione uma descrição"
   }
 
   if (valor === "" || valor === null || valor === undefined) {
-    return "Adicione um valor!"
+    return "Adicione um valor"
   }
 
   const numero = Number(valor)
@@ -20,11 +20,11 @@ export function validarTransacao({ descricao, valor, tipo, categoria }) {
   }
 
   if (tipo === "") {
-    return "Adicione um tipo"
+    return "Escolha se é entrada ou saída"
   }
 
   if (categoria === "") {
-    return "Selecione uma categoria"
+    return "Escolha uma categoria"
   }
 
   if (!categoriaCompativel(categoria, tipo)) {

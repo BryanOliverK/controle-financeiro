@@ -4,6 +4,15 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.13.0",
+    titulo: "Acabamento",
+    itens: [
+      "O app abre mais rápido: as telas são carregadas sob demanda e baixadas em segundo plano",
+      "Tela de erro amigável em vez de página branca, e título da página que muda com a aba",
+      "Acessibilidade: link para pular ao conteúdo, foco ao trocar de aba e cores com mais contraste"
+    ]
+  },
+  {
     versao: "1.12.0",
     titulo: "Bloqueio e privacidade",
     itens: [

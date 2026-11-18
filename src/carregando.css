@@ -302,3 +302,11 @@
 @media (prefers-reduced-motion: reduce) {
   .esq-bloco { animation: none; }
 }
+
+/* Esqueleto de uma aba carregando */
+.aba-carregando {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+}

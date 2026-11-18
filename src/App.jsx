@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
@@ -11,29 +11,17 @@ import { useOnline } from './hooks/useOnline'
 import { estadoNuvem } from './utils/nuvem'
 import Transacao from './components/Transacao'
 import FormularioTransacao from './components/FormularioTransacao'
-import Avisos from './components/Avisos'
-import Cartoes from './components/Cartoes'
-import Contas from './components/Contas'
-import Perfil from './components/Perfil'
-import Dividas from './components/Dividas'
-import Compromissos from './components/Compromissos'
-import GerenciarCategorias from './components/GerenciarCategorias'
 import Previsao from './components/Previsao'
-import ImportarExtrato from './components/ImportarExtrato'
 import LimparHistorico from './components/LimparHistorico'
-import Categorias from './components/Categorias'
-import Caixinhas from './components/Caixinhas'
-import AjudaAtalhos from './components/AjudaAtalhos'
 import BoasVindas from './components/BoasVindas'
-import ComparacaoMeses from './components/ComparacaoMeses'
-import Orcamentos from './components/Orcamentos'
-import Recorrentes from './components/Recorrentes'
 import Icone from './components/Icone'
 import Vazio from './components/Vazio'
 import Login from './components/Login'
 import TelaCarregando from './components/TelaCarregando'
 
 import { NOVIDADES } from './novidades'
+import LimiteDeErro from './components/LimiteDeErro'
+import CarregandoAba from './components/CarregandoAba'
 
 import { useAviso } from './hooks/useAviso'
 import { useAtalhos } from './hooks/useAtalhos'
@@ -100,6 +88,41 @@ import './carregando.css'
 import './recursos.css'
 
 // data vazia = hoje (o formulário mostra a data de hoje e resolve ao salvar)
+
+// Telas carregadas só quando precisam (abrir o app fica mais rápido).
+// Depois que o app abre, tudo é baixado em segundo plano para funcionar offline.
+const CARREGAR = {
+  Avisos: () => import('./components/Avisos'),
+  Cartoes: () => import('./components/Cartoes'),
+  Contas: () => import('./components/Contas'),
+  Perfil: () => import('./components/Perfil'),
+  Dividas: () => import('./components/Dividas'),
+  Compromissos: () => import('./components/Compromissos'),
+  GerenciarCategorias: () => import('./components/GerenciarCategorias'),
+  ImportarExtrato: () => import('./components/ImportarExtrato'),
+  Categorias: () => import('./components/Categorias'),
+  Caixinhas: () => import('./components/Caixinhas'),
+  AjudaAtalhos: () => import('./components/AjudaAtalhos'),
+  ComparacaoMeses: () => import('./components/ComparacaoMeses'),
+  Orcamentos: () => import('./components/Orcamentos'),
+  Recorrentes: () => import('./components/Recorrentes')
+}
+
+const Avisos = lazy(CARREGAR.Avisos)
+const Cartoes = lazy(CARREGAR.Cartoes)
+const Contas = lazy(CARREGAR.Contas)
+const Perfil = lazy(CARREGAR.Perfil)
+const Dividas = lazy(CARREGAR.Dividas)
+const Compromissos = lazy(CARREGAR.Compromissos)
+const GerenciarCategorias = lazy(CARREGAR.GerenciarCategorias)
+const ImportarExtrato = lazy(CARREGAR.ImportarExtrato)
+const Categorias = lazy(CARREGAR.Categorias)
+const Caixinhas = lazy(CARREGAR.Caixinhas)
+const AjudaAtalhos = lazy(CARREGAR.AjudaAtalhos)
+const ComparacaoMeses = lazy(CARREGAR.ComparacaoMeses)
+const Orcamentos = lazy(CARREGAR.Orcamentos)
+const Recorrentes = lazy(CARREGAR.Recorrentes)
+
 const FORM_VAZIO = {
   descricao: "", valor: "", tipo: "", categoria: "", data: "",
   repetir: false, parcelar: false, parcelas: "2", cartaoId: "", contaId: ""
@@ -1217,8 +1240,57 @@ function App() {
 
   // Atalhos de teclado (só com o app aberto, depois do login e da sincronização)
 
+  // Acessibilidade: "pular para o conteúdo" e foco no conteúdo ao trocar de aba
+  function irParaConteudo(evento) {
+    evento.preventDefault()
+    document.getElementById("conteudo")?.focus()
+  }
+
+  useEffect(() => {
+    const ativo = document.activeElement
+
+    // Só move o foco se a pessoa veio do menu (não atrapalha quem está digitando)
+    if (!ativo || ativo === document.body || ativo.closest?.(".sidebar")) {
+      document.getElementById("conteudo")?.focus({ preventScroll: true })
+    }
+  }, [aba])
+
+  // Título da página muda com a aba (aparece no histórico e nas abas do navegador)
+  useEffect(() => {
+    const nome = ABAS.find((a) => a.id === aba)?.nome
+    document.title = bloqueio.bloqueado ? "Bloqueado · Controle Financeiro" : aba === "inicio" || !nome ? "Controle Financeiro" : `${nome} · Controle Financeiro`
+  }, [aba, bloqueio.bloqueado])
+
+  // Com o app aberto e sincronizado, baixa as outras telas em segundo plano
+  useEffect(() => {
+    if (!usuario || !sincronizado) {
+      return undefined
+    }
+
+    const agendar = window.requestIdleCallback || ((f) => setTimeout(f, 1500))
+    const cancelar = window.cancelIdleCallback || clearTimeout
+
+    const id = agendar(() => {
+      Object.values(CARREGAR).forEach((carregar) => carregar().catch(() => {}))
+    })
+
+    return () => cancelar(id)
+  }, [usuario, sincronizado])
+
+  // Foca um campo assim que ele aparecer (a aba nova pode demorar um instante)
   function irParaCampo(seletor) {
-    setTimeout(() => document.querySelector(seletor)?.focus(), 60)
+    let tentativas = 0
+
+    const timer = setInterval(() => {
+      const campo = document.querySelector(seletor)
+
+      if (campo) {
+        campo.focus()
+        clearInterval(timer)
+      } else if (++tentativas > 20) {
+        clearInterval(timer)
+      }
+    }, 50)
   }
 
   useAtalhos(
@@ -1288,9 +1360,11 @@ function App() {
   return (
     <div className={classesApp}>
 
+      <a href="#conteudo" className="pular-conteudo" onClick={irParaConteudo}>Pular para o conteúdo</a>
+
       <Sidebar abas={abasComSelo} aba={aba} onMudar={mudarAba} />
 
-      <main className="conteudo">
+      <main className="conteudo" id="conteudo" tabIndex={-1}>
 
         <Header>
           <div className="header-acoes">
@@ -1376,6 +1450,8 @@ function App() {
         )}
 
         <div className="aba" key={aba}>
+         <LimiteDeErro compacto>
+          <Suspense fallback={<CarregandoAba />}>
 
           {aba === "inicio" && (
             <>
@@ -1649,33 +1725,43 @@ function App() {
                 onCancelar={cancelarEdicao}
               />
 
-              <Recorrentes
-                recorrentes={recorrentes}
-                onExcluir={excluirRecorrente}
-              />
+              <Suspense fallback={null}>
+                <Recorrentes
+                  recorrentes={recorrentes}
+                  onExcluir={excluirRecorrente}
+                />
 
-              <GerenciarCategorias
-                categorias={categoriasExtras}
-                existentes={todasCategorias().map(([chave, info]) => ({ chave, nome: info.nome }))}
-                onSalvar={salvarCategoria}
-                onExcluir={excluirCategoria}
-              />
+                <GerenciarCategorias
+                  categorias={categoriasExtras}
+                  existentes={todasCategorias().map(([chave, info]) => ({ chave, nome: info.nome }))}
+                  onSalvar={salvarCategoria}
+                  onExcluir={excluirCategoria}
+                />
+              </Suspense>
             </>
           )}
 
+          </Suspense>
+         </LimiteDeErro>
         </div>
 
       </main>
 
-      {ajudaAberta && <AjudaAtalhos onFechar={() => setAjudaAberta(false)} />}
+      {ajudaAberta && (
+        <Suspense fallback={null}>
+          <AjudaAtalhos onFechar={() => setAjudaAberta(false)} />
+        </Suspense>
+      )}
 
       {importarAberto && (
-        <ImportarExtrato
-          transacoes={transacoes}
-          contas={contas}
-          onImportar={importarExtrato}
-          onFechar={() => setImportarAberto(false)}
-        />
+        <Suspense fallback={null}>
+          <ImportarExtrato
+            transacoes={transacoes}
+            contas={contas}
+            onImportar={importarExtrato}
+            onFechar={() => setImportarAberto(false)}
+          />
+        </Suspense>
       )}
 
       {limparAberto && (

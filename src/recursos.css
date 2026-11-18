@@ -2958,3 +2958,93 @@
   .bloq-teclado { grid-template-columns: repeat(3, 64px); gap: 10px; }
   .bloq-teclado button { width: 64px; height: 64px; }
 }
+
+/* ========================= */
+/* ACESSIBILIDADE E ERRO     */
+/* ========================= */
+
+.pular-conteudo {
+  position: fixed;
+  z-index: 1000;
+  top: 8px;
+  left: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background-color: var(--brand);
+  color: var(--on-brand);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.pular-conteudo:focus { transform: none; }
+
+.conteudo:focus { outline: none; }
+
+/* Foco visível para quem navega pelo teclado */
+:where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.erro-aba {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 20px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  color: var(--text-muted);
+}
+
+.erro-aba p, .erro-card p { margin: 0; font-size: 14px; }
+.erro-aba strong { color: var(--text); font-size: 17px; }
+
+.erro-icone {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background-color: color-mix(in srgb, var(--saida) 14%, transparent);
+  color: var(--saida);
+}
+
+.erro-botoes { display: flex; gap: 10px; margin-top: 6px; }
+
+.tela-erro {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: var(--font);
+  color: var(--text);
+}
+
+.erro-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 420px;
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.erro-card h1 { margin: 0; color: var(--text); font-size: 22px; font-weight: 800; }
+
+.erro-detalhes { width: 100%; margin-top: 8px; text-align: left; font-size: 13px; }
+.erro-detalhes summary { cursor: pointer; font-weight: 600; }
+.erro-detalhes pre { margin: 10px 0; padding: 10px; overflow: auto; max-height: 140px; border-radius: 10px; background-color: var(--surface-2); white-space: pre-wrap; word-break: break-word; font-size: 12px; }

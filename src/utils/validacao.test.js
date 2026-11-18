@@ -9,19 +9,19 @@ describe("validarTransacao", () => {
   })
 
   it("exige descrição", () => {
-    expect(validarTransacao({ ...ok, descricao: "   " })).toBe("Adicione uma Descrição!")
+    expect(validarTransacao({ ...ok, descricao: "   " })).toBe("Adicione uma descrição")
   })
 
   it("exige valor, e valor válido e positivo", () => {
-    expect(validarTransacao({ ...ok, valor: "" })).toBe("Adicione um valor!")
+    expect(validarTransacao({ ...ok, valor: "" })).toBe("Adicione um valor")
     expect(validarTransacao({ ...ok, valor: "abc" })).toBe("Adicione um valor válido")
     expect(validarTransacao({ ...ok, valor: "0" })).toBe("Adicione um valor válido")
     expect(validarTransacao({ ...ok, valor: "-5" })).toBe("Adicione um valor válido")
   })
 
   it("exige tipo e categoria", () => {
-    expect(validarTransacao({ ...ok, tipo: "" })).toBe("Adicione um tipo")
-    expect(validarTransacao({ ...ok, categoria: "" })).toBe("Selecione uma categoria")
+    expect(validarTransacao({ ...ok, tipo: "" })).toBe("Escolha se é entrada ou saída")
+    expect(validarTransacao({ ...ok, categoria: "" })).toBe("Escolha uma categoria")
   })
 
   it("recusa categoria que não combina com o tipo", () => {
