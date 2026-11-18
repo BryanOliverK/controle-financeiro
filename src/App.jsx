@@ -1353,6 +1353,7 @@ function App() {
         onRecuperarSenha={recuperarSenha}
         erro={erroLogin}
         modoEscuro={modoEscuro}
+        modoLeve={modoLeve}
       />
     )
   }

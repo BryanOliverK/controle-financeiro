@@ -4,6 +4,14 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.15.0",
+    titulo: "Nova tela de entrada",
+    itens: [
+      "Tela de login nova, em cartão de vidro, com painel que desliza ao trocar entre entrar e criar conta",
+      "Funciona no celular e respeita o Modo leve (sem animação)"
+    ]
+  },
+  {
     versao: "1.14.0",
     titulo: "Resumo do ano e meta de gastos",
     itens: [

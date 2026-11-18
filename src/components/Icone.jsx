@@ -112,6 +112,12 @@ const CAMINHOS = {
       <path d="M8 11V8a4 4 0 0 1 8 0v3" />
     </>
   ),
+  email: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <path d="M3.5 7.5l8.5 6 8.5-6" />
+    </>
+  ),
   voltar: (
     <>
       <path d="M21 5H9l-6 7 6 7h12z" />
