@@ -320,6 +320,18 @@ const CAMINHOS = {
       <circle cx="12" cy="12.5" r="3.2" />
     </>
   ),
+  fechar: (
+    <>
+      <path d="M6 6l12 12" />
+      <path d="M18 6 6 18" />
+    </>
+  ),
+  etiqueta: (
+    <>
+      <path d="M3.5 12.2V5.5a2 2 0 0 1 2-2h6.7a2 2 0 0 1 1.4.6l7.3 7.3a2 2 0 0 1 0 2.8l-6.7 6.7a2 2 0 0 1-2.8 0l-7.3-7.3a2 2 0 0 1-.6-1.4z" />
+      <circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+    </>
+  ),
   busca: (
     <>
       <circle cx="11" cy="11" r="6.5" />

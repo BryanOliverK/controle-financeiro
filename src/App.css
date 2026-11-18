@@ -709,6 +709,12 @@ select:focus-visible {
     align-items: stretch;
   }
 
+  /* Em coluna, o "flex: 1 1 200px" da busca virava 200px de altura */
+  .filtros input,
+  .filtros input[type="text"] {
+    flex: 0 0 auto;
+  }
+
   .formulario {
     grid-template-columns: 1fr;
     padding: 16px;

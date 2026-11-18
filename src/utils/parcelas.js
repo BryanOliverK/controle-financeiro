@@ -32,7 +32,7 @@ export function dividirEmParcelas(total, quantidade) {
 
 // Cria as transações de uma compra parcelada. A parcela 1 fica na data
 // informada e as seguintes nos meses seguintes. "parcela" guarda a posição.
-export function gerarParcelas({ descricao, valorTotal, tipo, categoria, cartaoId, contaId }, dataIso, quantidade) {
+export function gerarParcelas({ descricao, valorTotal, tipo, categoria, cartaoId, contaId, etiquetas }, dataIso, quantidade) {
   const grupo = novoId()
   const valores = dividirEmParcelas(valorTotal, quantidade)
 
@@ -44,6 +44,7 @@ export function gerarParcelas({ descricao, valorTotal, tipo, categoria, cartaoId
     categoria,
     ...(cartaoId ? { cartaoId } : {}),
     ...(contaId ? { contaId } : {}),
+    ...(etiquetas && etiquetas.length > 0 ? { etiquetas } : {}),
     data: somarMeses(dataIso, i).toISOString(),
     parcela: { n: i + 1, total: quantidade, grupo }
   }))

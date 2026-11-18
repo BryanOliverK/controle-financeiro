@@ -2,6 +2,7 @@
 // e sugere categoria/conta/valor a partir do que você já lançou antes.
 
 import { categoriaCompativel, todasCategorias } from "./categorias"
+import { extrairEtiquetas, limparEtiquetas } from "./etiquetas"
 import { arredondar } from "./formatar"
 import { LIMITE_DESCRICAO } from "./validacao"
 
@@ -50,7 +51,9 @@ const comecaComPalavra = (texto, palavra) => new RegExp(`(^| )${palavra}( |$)`).
 
 // Resultado: { ok: true, descricao, valor, tipo } ou { ok: false, motivo }
 export function interpretarRapido(texto) {
-  const original = String(texto ?? "").trim()
+  // "#casa" vira etiqueta e sai do texto antes de procurar o valor
+  const { texto: semEtiquetas, etiquetas } = extrairEtiquetas(texto)
+  const original = semEtiquetas
 
   if (original === "") {
     return { ok: false, motivo: "vazio" }
@@ -98,7 +101,7 @@ export function interpretarRapido(texto) {
 
   const descricao = (descricaoBruta[0].toUpperCase() + descricaoBruta.slice(1)).slice(0, LIMITE_DESCRICAO)
 
-  return { ok: true, descricao, valor: arredondar(numero), tipo }
+  return { ok: true, descricao, valor: arredondar(numero), tipo, ...(etiquetas.length > 0 ? { etiquetas } : {}) }
 }
 
 // ----- Categoria -----
@@ -177,7 +180,7 @@ export function sugerirCategoria(descricao, tipo, historico = []) {
 // ----- Sugestões ao digitar -----
 
 // Descrições que você já usou e que combinam com o que está sendo digitado.
-// Devolve até "limite" itens: { descricao, valor, tipo, categoria, contaId, cartaoId } (do lançamento mais recente).
+// Devolve até "limite" itens: { descricao, valor, tipo, categoria, contaId, cartaoId, etiquetas? } (do lançamento mais recente).
 export function sugestoesDescricao(digitado, historico = [], limite = 5) {
   const busca = normalizar(digitado)
 
@@ -216,6 +219,7 @@ export function sugestoesDescricao(digitado, historico = [], limite = 5) {
       tipo: t.tipo,
       categoria: t.categoria,
       contaId: t.contaId || "",
-      cartaoId: t.cartaoId || ""
+      cartaoId: t.cartaoId || "",
+      ...(limparEtiquetas(t.etiquetas).length > 0 ? { etiquetas: limparEtiquetas(t.etiquetas) } : {})
     }))
 }

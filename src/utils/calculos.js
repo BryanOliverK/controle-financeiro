@@ -1,3 +1,4 @@
+import { buscaBateEtiqueta, temEtiqueta } from "./etiquetas"
 import { chaveMes, rotuloData } from "./formatar"
 
 // Somas feitas em centavos (inteiros) para não acumular erro de arredondamento.
@@ -56,12 +57,15 @@ export function gastosPorCategoria(transacoes) {
   return { gastos, totalGastos: total / 100 }
 }
 
-export function filtrar(transacoes, { busca, filtroTipo }) {
+// A busca olha a descrição e também as etiquetas ("viagem" ou "#viagem").
+// filtroEtiqueta (opcional): só as que têm aquela etiqueta.
+export function filtrar(transacoes, { busca, filtroTipo, filtroEtiqueta = "" }) {
   const termo = busca.toLowerCase().trim()
 
   return transacoes.filter((t) =>
-    t.descricao.toLowerCase().includes(termo) &&
-    (filtroTipo === "todos" || t.tipo === filtroTipo)
+    (termo === "" || t.descricao.toLowerCase().includes(termo) || buscaBateEtiqueta(t, termo)) &&
+    (filtroTipo === "todos" || t.tipo === filtroTipo) &&
+    (filtroEtiqueta === "" || temEtiqueta(t, filtroEtiqueta))
   )
 }
 

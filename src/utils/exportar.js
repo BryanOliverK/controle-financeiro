@@ -1,15 +1,17 @@
+import { limparEtiquetas } from "./etiquetas"
 import { celulaCSV } from "./formatar"
 
 // Monta o CSV (separador ";" e BOM para o Excel abrir com acentos) e baixa.
 export function baixarCSV(transacoes, nomeArquivo) {
-  const cabecalho = ["Data", "Descrição", "Tipo", "Categoria", "Valor"]
+  const cabecalho = ["Data", "Descrição", "Tipo", "Categoria", "Valor", "Etiquetas"]
 
   const linhas = transacoes.map((t) => [
     new Date(t.data).toLocaleDateString("pt-BR"),
     celulaCSV(t.descricao),
     t.tipo === "entrada" ? "Entrada" : "Saída",
     t.categoria || "",
-    t.valor.toFixed(2).replace(".", ",")
+    t.valor.toFixed(2).replace(".", ","),
+    limparEtiquetas(t.etiquetas).join(", ")
   ])
 
   const csv = "﻿" + [cabecalho, ...linhas]

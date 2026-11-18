@@ -3,10 +3,12 @@ import { infoCategoria, nomeCategoria, SEM_CATEGORIA } from "../utils/categorias
 import { infoCartao } from "../utils/cartoes"
 import { infoConta } from "../utils/contas"
 import { brl } from "../utils/formatar"
+import { limparEtiquetas } from "../utils/etiquetas"
 
 // Uma linha da lista. Se receber onEditar/onExcluir, mostra os botões
 // (transações de caixinha não podem ser editadas aqui).
-function Transacao({ transacao, onEditar, onExcluir }) {
+// Com onEtiqueta, clicar numa etiqueta filtra a lista por ela.
+function Transacao({ transacao, onEditar, onExcluir, onEtiqueta }) {
 
     const { id, descricao, valor, tipo, categoria, data, parcela, cartaoId, contaId } = transacao
 
@@ -15,6 +17,7 @@ function Transacao({ transacao, onEditar, onExcluir }) {
     const entrada = tipo === "entrada"
 
     const info = infoCategoria(categoria) || SEM_CATEGORIA
+    const etiquetas = limparEtiquetas(transacao.etiquetas)
 
     return (
         <div className="transacao">
@@ -48,6 +51,27 @@ function Transacao({ transacao, onEditar, onExcluir }) {
                         minute: "2-digit"
                     })}
                 </p>
+
+                {etiquetas.length > 0 && (
+                    <p className="etq-linha">
+                        {etiquetas.map((e) => (
+                            onEtiqueta ? (
+                                <button
+                                    type="button"
+                                    key={e}
+                                    className="etq-chip etq-link"
+                                    onClick={() => onEtiqueta(e)}
+                                    title={`Ver só ${e}`}
+                                    aria-label={`Filtrar pela etiqueta ${e}`}
+                                >
+                                    #{e}
+                                </button>
+                            ) : (
+                                <span key={e} className="etq-chip">#{e}</span>
+                            )
+                        ))}
+                    </p>
+                )}
             </div>
 
             <div className="lado-transacao">

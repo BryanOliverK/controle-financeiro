@@ -4,6 +4,16 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.16.0",
+    titulo: "Etiquetas nos lançamentos",
+    itens: [
+      "Marque lançamentos com etiquetas como #viagem ou #presente, além da categoria",
+      "Toque numa etiqueta na lista (ou use o filtro) para ver só aqueles lançamentos, com quanto gastou e recebeu",
+      "No lançamento rápido, escreva a etiqueta junto: mercado 85 #casa",
+      "Etiquetas entram no backup, nas parcelas, nos lançamentos mensais e no CSV"
+    ]
+  },
+  {
     versao: "1.15.0",
     titulo: "Nova tela de entrada",
     itens: [

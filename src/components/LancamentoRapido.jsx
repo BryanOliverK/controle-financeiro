@@ -2,6 +2,7 @@ import { useRef, useState } from "react"
 import Icone from "./Icone"
 import { categoriasPara, infoCategoria } from "../utils/categorias"
 import { infoConta } from "../utils/contas"
+import { extrairEtiquetas } from "../utils/etiquetas"
 import { brl } from "../utils/formatar"
 import { interpretarRapido, normalizar, sugerirCategoria, sugestoesDescricao } from "../utils/rapido"
 
@@ -31,7 +32,7 @@ function LancamentoRapido({ transacoes, onLancar }) {
 
   // Ainda só escrevendo o nome: oferece o que você já lançou antes
   const sugestoes = !r.ok && r.motivo === "sem-valor"
-    ? sugestoesDescricao(texto.replace(/^[+\-−]\s*/, ""), transacoes, 3)
+    ? sugestoesDescricao(extrairEtiquetas(texto).texto.replace(/^[+\-−]\s*/, ""), transacoes, 3)
     : []
 
   function alterar(valor) {
@@ -52,7 +53,7 @@ function LancamentoRapido({ transacoes, onLancar }) {
       return
     }
 
-    onLancar({ descricao: r.descricao, valor: r.valor, tipo: r.tipo, categoria, contaId: conta })
+    onLancar({ descricao: r.descricao, valor: r.valor, tipo: r.tipo, categoria, contaId: conta, etiquetas: r.etiquetas || [] })
 
     setTexto("")
     setErro("")
@@ -72,7 +73,7 @@ function LancamentoRapido({ transacoes, onLancar }) {
           type="text"
           value={texto}
           onChange={(e) => alterar(e.target.value)}
-          placeholder='Lançamento rápido: "mercado 85" ou "+ salário 3000"'
+          placeholder='Lançamento rápido: "mercado 85 #casa" ou "+ salário 3000"'
           aria-label="Lançamento rápido"
           aria-describedby="rapido-ajuda"
           autoComplete="off"
@@ -103,6 +104,8 @@ function LancamentoRapido({ transacoes, onLancar }) {
             </label>
 
             {conta && <span className="rapido-conta">{infoConta(conta).nome}</span>}
+
+            {(r.etiquetas || []).map((e) => <span key={e} className="etq-chip">#{e}</span>)}
           </div>
         )}
 
@@ -113,7 +116,7 @@ function LancamentoRapido({ transacoes, onLancar }) {
                 key={`${s.tipo}|${s.descricao}`}
                 type="button"
                 className="rapido-sugestao"
-                onClick={() => { alterar(`${s.tipo === "entrada" ? "+ " : ""}${s.descricao} ${virgula(s.valor)}`); campo.current?.focus() }}
+                onClick={() => { alterar(`${s.tipo === "entrada" ? "+ " : ""}${s.descricao} ${virgula(s.valor)}${(s.etiquetas || []).map((e) => ` #${e}`).join("")}`); campo.current?.focus() }}
               >
                 {s.descricao}
                 <small className="valor-privado">{brl(s.valor)}</small>
@@ -123,7 +126,7 @@ function LancamentoRapido({ transacoes, onLancar }) {
         )}
 
         {!r.ok && sugestoes.length === 0 && !erro && (
-          <span className="rapido-dica">Escreva o que foi e quanto. Use + para entrada. Enter lança.</span>
+          <span className="rapido-dica">Escreva o que foi e quanto. Use + para entrada e #palavra para etiqueta. Enter lança.</span>
         )}
 
         {erro && <span className="rapido-erro" role="alert">{erro}</span>}

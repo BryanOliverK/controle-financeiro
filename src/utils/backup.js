@@ -1,3 +1,4 @@
+import { limparEtiquetas } from "./etiquetas"
 import { hojeLocal } from "./formatar"
 import { limparCartoes, limparFaturasPagas } from "./cartoes"
 import { limparCategoriasExtras } from "./categorias"
@@ -117,6 +118,12 @@ function limparTransacao(t) {
     limpa.contaId = t.contaId
   }
 
+  const etiquetas = limparEtiquetas(t.etiquetas)
+
+  if (etiquetas.length > 0) {
+    limpa.etiquetas = etiquetas
+  }
+
   return limpa
 }
 
@@ -124,6 +131,7 @@ function limparRecorrente(r) {
   return {
     ...(typeof r.cartaoId === "string" && r.cartaoId !== "" ? { cartaoId: r.cartaoId } : {}),
     ...(typeof r.contaId === "string" && r.contaId !== "" ? { contaId: r.contaId } : {}),
+    ...(limparEtiquetas(r.etiquetas).length > 0 ? { etiquetas: limparEtiquetas(r.etiquetas) } : {}),
     id: r.id,
     descricao: r.descricao,
     valor: r.valor,

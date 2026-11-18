@@ -3169,3 +3169,186 @@
 /* Barra da meta geral muda de cor como a dos orçamentos */
 :is(.meta-cartao, .meta-geral).alerta .orc-progresso { background-color: #e0a100; }
 :is(.meta-cartao, .meta-geral).estourado .orc-progresso { background-color: var(--saida); }
+
+/* ========================= */
+/* ETIQUETAS                 */
+/* ========================= */
+
+.campo-etiquetas {
+  grid-column: 1 / -1;
+}
+
+.campo-etiquetas .campo-rotulo small {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* A "caixa" imita um campo de texto, com as bolinhas dentro */
+.etq-caixa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-2);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.etq-caixa:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.formulario .etq-caixa input {
+  flex: 1 1 140px;
+  width: auto;
+  min-width: 0;
+  padding: 6px 4px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.formulario .etq-caixa input:disabled {
+  cursor: not-allowed;
+}
+
+.etq-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.etq-caixa .etq-chip {
+  background-color: var(--brand-soft);
+  border-color: transparent;
+}
+
+.etq-remover {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-right: -6px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.etq-remover:hover {
+  background-color: color-mix(in srgb, var(--saida) 16%, transparent);
+  color: var(--saida);
+}
+
+.etq-sugestoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.etq-sugestao {
+  padding: 4px 11px;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.etq-sugestao:hover {
+  border-color: var(--brand);
+  background-color: var(--brand-soft);
+  color: var(--text);
+}
+
+/* Na lista: uma linha de bolinhas abaixo da categoria e data */
+.info-transacao .etq-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.etq-link {
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.etq-link:hover {
+  border-color: var(--brand);
+  background-color: var(--brand-soft);
+}
+
+.etq-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  font-size: 14px;
+}
+
+.etq-resumo-texto {
+  flex: 1 1 220px;
+  min-width: 0;
+  color: var(--text-muted);
+}
+
+.etq-resumo-texto strong {
+  font-weight: 800;
+}
+
+.etq-limpar {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.etq-limpar:hover {
+  border-color: var(--brand);
+}
+
+.etq-chip:focus-visible,
+.etq-sugestao:focus-visible,
+.etq-remover:focus-visible,
+.etq-limpar:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.modo-leve .etq-caixa,
+.modo-leve .etq-sugestao,
+.modo-leve .etq-link {
+  transition: none;
+}

@@ -50,6 +50,7 @@ import { comPagamento, limparDividas, semPagamento, transacaoDoPagamento, valida
 import { MAX_PARCELAS, gerarParcelas } from './utils/parcelas'
 import { gerarAvisos, limparAvisosLidos } from './utils/avisos'
 import { calcularPrevisao } from './utils/previsao'
+import { contarEtiquetas, limparEtiquetas } from './utils/etiquetas'
 import {
   agruparPorData,
   calcularResumo,
@@ -131,7 +132,7 @@ const Recorrentes = lazy(CARREGAR.Recorrentes)
 
 const FORM_VAZIO = {
   descricao: "", valor: "", tipo: "", categoria: "", data: "",
-  repetir: false, parcelar: false, parcelas: "2", cartaoId: "", contaId: ""
+  repetir: false, parcelar: false, parcelas: "2", cartaoId: "", contaId: "", etiquetas: []
 }
 
 const ABAS = [
@@ -158,6 +159,7 @@ function App() {
 
   const [busca, setBusca] = useState("")
   const [filtroTipo, setFiltroTipo] = useState("todos")
+  const [filtroEtiqueta, setFiltroEtiqueta] = useState("")
   const [ordenacao, setOrdenacao] = useState("recentes")
 
   const [form, setForm] = useState(FORM_VAZIO)
@@ -305,9 +307,20 @@ function App() {
     [transacoesDoMes]
   )
 
+  // Etiquetas em uso (todas as transações) e o filtro, que some sozinho se a etiqueta deixar de existir
+  const etiquetasUsadas = useMemo(() => contarEtiquetas(visiveis), [visiveis])
+
+  const etiquetaFiltrada = etiquetasUsadas.some((e) => e.nome === filtroEtiqueta) ? filtroEtiqueta : ""
+
   const transacoesOrdenadas = useMemo(
-    () => ordenar(filtrar(transacoesDoMes, { busca, filtroTipo }), ordenacao),
-    [transacoesDoMes, busca, filtroTipo, ordenacao]
+    () => ordenar(filtrar(transacoesDoMes, { busca, filtroTipo, filtroEtiqueta: etiquetaFiltrada }), ordenacao),
+    [transacoesDoMes, busca, filtroTipo, etiquetaFiltrada, ordenacao]
+  )
+
+  // Totais do que está na lista quando há uma etiqueta escolhida
+  const resumoDaEtiqueta = useMemo(
+    () => (etiquetaFiltrada ? calcularResumo(transacoesOrdenadas) : null),
+    [etiquetaFiltrada, transacoesOrdenadas]
   )
 
   const transacoesPorData = useMemo(
@@ -404,6 +417,14 @@ function App() {
           delete atualizada.contaId
         }
 
+        const etiquetas = limparEtiquetas(form.etiquetas)
+
+        if (etiquetas.length > 0) {
+          atualizada.etiquetas = etiquetas
+        } else {
+          delete atualizada.etiquetas
+        }
+
         return atualizada
       }))
 
@@ -420,6 +441,7 @@ function App() {
         categoria: form.categoria,
         ...(form.tipo === "saida" && form.cartaoId ? { cartaoId: form.cartaoId } : {}),
         ...(form.contaId ? { contaId: form.contaId } : {}),
+        ...(limparEtiquetas(form.etiquetas).length > 0 ? { etiquetas: limparEtiquetas(form.etiquetas) } : {}),
         data: dataParaIso(form.data)
       }
 
@@ -485,7 +507,7 @@ function App() {
   }
 
   // Lançamento rápido ("mercado 85"): já nasce pronto, com Desfazer
-  function lancarRapido({ descricao, valor, tipo, categoria, contaId }) {
+  function lancarRapido({ descricao, valor, tipo, categoria, contaId, etiquetas = [] }) {
 
     const nova = {
       id: novoId(),
@@ -494,6 +516,7 @@ function App() {
       tipo,
       categoria,
       ...(contaId && contas.some((c) => c.id === contaId) ? { contaId } : {}),
+      ...(limparEtiquetas(etiquetas).length > 0 ? { etiquetas: limparEtiquetas(etiquetas) } : {}),
       data: new Date().toISOString()
     }
 
@@ -534,7 +557,8 @@ function App() {
       parcelar: false,
       parcelas: "2",
       cartaoId: transacao.cartaoId && infoCartao(transacao.cartaoId) ? transacao.cartaoId : "",
-      contaId: transacao.contaId && infoConta(transacao.contaId) ? transacao.contaId : ""
+      contaId: transacao.contaId && infoConta(transacao.contaId) ? transacao.contaId : "",
+      etiquetas: limparEtiquetas(transacao.etiquetas)
     })
 
     setEditandoId(id)
@@ -1561,6 +1585,18 @@ function App() {
                   <option value="saida">Saídas</option>
                 </select>
 
+                {etiquetasUsadas.length > 0 && (
+                  <select
+                    aria-label="Filtrar por etiqueta"
+                    value={etiquetaFiltrada}
+                    onChange={(e) => setFiltroEtiqueta(e.target.value)}>
+                    <option value="">Todas as etiquetas</option>
+                    {etiquetasUsadas.map((e) => (
+                      <option key={e.nome} value={e.nome}>#{e.nome} ({e.qtd})</option>
+                    ))}
+                  </select>
+                )}
+
                 <select
                   aria-label="Ordenar"
                   value={ordenacao}
@@ -1590,6 +1626,23 @@ function App() {
                 </button>
               </div>
 
+              {resumoDaEtiqueta && (
+                <div className="etq-resumo" role="status">
+                  <span className="etq-chip">#{etiquetaFiltrada}</span>
+
+                  <span className="etq-resumo-texto">
+                    {transacoesOrdenadas.length} {transacoesOrdenadas.length === 1 ? "lançamento" : "lançamentos"}
+                    {resumoDaEtiqueta.saidas > 0 && <> · gastou <strong className="valor-privado saida-texto">{brl(resumoDaEtiqueta.saidas)}</strong></>}
+                    {resumoDaEtiqueta.entradas > 0 && <> · recebeu <strong className="valor-privado entrada-texto">{brl(resumoDaEtiqueta.entradas)}</strong></>}
+                    {mesAtivo !== "todos" && " neste mês"}
+                  </span>
+
+                  <button type="button" className="etq-limpar" onClick={() => setFiltroEtiqueta("")}>
+                    Ver todas
+                  </button>
+                </div>
+              )}
+
               <div className="transacoes">
                 {transacoesOrdenadas.length === 0 && (
                   transacoesDoMes.length === 0 ? (
@@ -1604,7 +1657,7 @@ function App() {
                     <Vazio
                       icone="busca"
                       titulo="Nada encontrado"
-                      acao={{ texto: "Limpar filtros", onClick: () => { setBusca(""); setFiltroTipo("todos") } }}
+                      acao={{ texto: "Limpar filtros", onClick: () => { setBusca(""); setFiltroTipo("todos"); setFiltroEtiqueta("") } }}
                     >
                       Nenhuma transação combina com a busca ou o filtro.
                     </Vazio>
@@ -1627,6 +1680,7 @@ function App() {
                         transacao={transacao}
                         onEditar={iniciarEdicao}
                         onExcluir={excluirTransacao}
+                        onEtiqueta={setFiltroEtiqueta}
                       />
                     ))}
                   </div>
@@ -1764,6 +1818,7 @@ function App() {
             <>
               <FormularioTransacao
                 historico={visiveis}
+                etiquetasUsadas={etiquetasUsadas}
                 form={form}
                 editando={editandoId !== null}
                 cartoes={cartoes}

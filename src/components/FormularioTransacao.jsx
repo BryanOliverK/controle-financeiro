@@ -1,5 +1,6 @@
 import { useState } from "react"
 import Icone from "./Icone"
+import CampoEtiquetas from "./CampoEtiquetas"
 import { categoriasPara } from "../utils/categorias"
 import { brl, hojeLocal } from "../utils/formatar"
 import { MAX_PARCELAS, dividirEmParcelas } from "../utils/parcelas"
@@ -14,7 +15,7 @@ const TIPOS = [
 
 // Formulário de nova transação / edição. Os campos ficam no App (prop "form"),
 // assim o que foi digitado não se perde ao trocar de aba.
-function FormularioTransacao({ form, editando, cartoes = [], contas = [], historico = [], onAlterar, onSalvar, onCancelar }) {
+function FormularioTransacao({ form, editando, cartoes = [], contas = [], historico = [], etiquetasUsadas = [], onAlterar, onSalvar, onCancelar }) {
 
   const [focado, setFocado] = useState(false)
   const [ativa, setAtiva] = useState(-1)
@@ -28,6 +29,7 @@ function FormularioTransacao({ form, editando, cartoes = [], contas = [], histor
     onAlterar("valor", String(s.valor))
     onAlterar("contaId", s.contaId && contas.some((c) => c.id === s.contaId) ? s.contaId : "")
     onAlterar("descricao", s.descricao.slice(0, LIMITE_DESCRICAO))
+    onAlterar("etiquetas", s.etiquetas || [])
     setAtiva(-1)
     setFocado(false)
   }
@@ -173,6 +175,12 @@ function FormularioTransacao({ form, editando, cartoes = [], contas = [], histor
             ))}
           </div>
         </div>
+
+        <CampoEtiquetas
+          valor={form.etiquetas || []}
+          usadas={etiquetasUsadas}
+          onChange={(lista) => onAlterar("etiquetas", lista)}
+        />
 
         {contas.length > 0 && (
           <div className="campo-cartao">
