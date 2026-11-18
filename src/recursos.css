@@ -2741,3 +2741,57 @@
 .sugestao-nome { font-weight: 600; }
 .sugestao:hover,
 .sugestao.ativa { background-color: var(--brand-soft); }
+
+
+/* ========================= */
+/* STATUS DA NUVEM           */
+/* ========================= */
+
+.status-nuvem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-nuvem.ok { color: var(--entrada); }
+.status-nuvem.enviando { color: var(--brand); }
+.status-nuvem.offline { color: #b45309; border-color: color-mix(in srgb, #f59e0b 45%, var(--border)); background-color: color-mix(in srgb, #f59e0b 12%, var(--surface)); }
+.status-nuvem.erro { color: var(--saida); border-color: color-mix(in srgb, var(--saida) 45%, var(--border)); background-color: color-mix(in srgb, var(--saida) 10%, var(--surface)); }
+
+.modo-escuro .status-nuvem.offline { color: #fbbf24; }
+
+.status-nuvem.enviando .icone { animation: status-giro 1s linear infinite; }
+
+@keyframes status-giro { to { transform: rotate(360deg); } }
+
+.status-nuvem-tentar {
+  margin-left: 2px;
+  padding: 3px 10px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--saida);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  /* No celular, só o ícone — o texto aparece quando algo está errado */
+  .status-nuvem.ok { display: none; }
+  .status-nuvem.enviando .status-nuvem-texto { display: none; }
+  .status-nuvem.enviando { padding: 6px 8px; }
+
+  /* Se faltar lugar (aviso de erro ou sem conexão), o cabeçalho quebra em duas linhas */
+  .header { flex-wrap: wrap; }
+  .header-acoes { flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; }
+}

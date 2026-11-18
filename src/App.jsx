@@ -4,6 +4,9 @@ import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Resumo from './components/Resumo'
 import LancamentoRapido from './components/LancamentoRapido'
+import StatusNuvem from './components/StatusNuvem'
+import { useOnline } from './hooks/useOnline'
+import { estadoNuvem } from './utils/nuvem'
 import Transacao from './components/Transacao'
 import FormularioTransacao from './components/FormularioTransacao'
 import Avisos from './components/Avisos'
@@ -171,7 +174,9 @@ function App() {
   // Enquanto a conta é excluída, a sincronização fica parada (senão recriaria os dados)
   const [excluindoConta, setExcluindoConta] = useState(false)
 
-  const { sincronizado, erroSincronia } = useSincronizacao({
+  const online = useOnline()
+
+  const { sincronizado, erroSincronia, enviando, erroEnvio, erroEscuta, tentarDeNovo } = useSincronizacao({
     usuario,
     mostrarAviso,
     pausado: excluindoConta,
@@ -1265,6 +1270,11 @@ function App() {
 
         <Header>
           <div className="header-acoes">
+            <StatusNuvem
+              {...estadoNuvem({ online, enviando, erroEnvio, erroEscuta })}
+              onTentar={tentarDeNovo}
+            />
+
             {podeInstalar && (
               <button className="btn-instalar" onClick={instalar}>
                 <Icone nome="baixar" tamanho={16} />

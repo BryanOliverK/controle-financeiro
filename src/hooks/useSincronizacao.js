@@ -10,6 +10,7 @@ import { limparFoto } from '../utils/foto'
 import { limparDividas } from '../utils/dividas'
 import { unirPorId } from '../utils/listas'
 import { limparOrcamentos } from '../utils/orcamentos'
+import { mensagemErroNuvem } from '../utils/nuvem'
 
 // Sincronização com o Firestore (documento usuarios/{uid}).
 // IMPORTANTE: a ordem dos campos na "chave" do listener e na do envio precisa
@@ -17,7 +18,12 @@ import { limparOrcamentos } from '../utils/orcamentos'
 export function useSincronizacao({ usuario, dados, alterar, mostrarAviso, pausado = false }) {
   const [sincronizado, setSincronizado] = useState(false)
   const [erroSincronia, setErroSincronia] = useState("")
+  const [emVoo, setEmVoo] = useState(0)
+  const [erroEnvio, setErroEnvio] = useState("")
+  const [erroEscuta, setErroEscuta] = useState("")
+  const [tentativa, setTentativa] = useState(0)
   const ultimoRemoto = useRef("")
+  const avisouErro = useRef(false)
 
   const { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, foto } = dados
   const { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas, setContas, setTransferencias, setFoto } = alterar
@@ -158,14 +164,16 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso, pausad
     localStorage.setItem(chaveMigracao, "1")
     setSincronizado(true)
     setErroSincronia("")
+    setErroEscuta("")
     }, (erro) => {
-      setErroSincronia(
-        erro.code === "permission-denied"
-          ? "O Firebase recusou o acesso aos seus dados. Confira as regras do Firestore."
-          : "Não foi possível carregar seus dados da nuvem. Confira sua conexão e tente de novo."
-      )
+      const mensagem = erro.code === "permission-denied"
+        ? "O Firebase recusou o acesso aos seus dados. Confira as regras do Firestore."
+        : "Não foi possível carregar seus dados da nuvem. Confira sua conexão e tente de novo."
+
+      setErroSincronia(mensagem)
+      setErroEscuta(mensagem)
     })
-  }, [usuario, pausado])
+  }, [usuario, pausado, tentativa])
 
   // Envia as mudanças para a nuvem
 
@@ -200,10 +208,67 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso, pausad
 
     ultimoRemoto.current = chave
 
+    setEmVoo((n) => n + 1)
+
     setDoc(doc(db, "usuarios", usuario.uid), dados, { merge: true })
-      .catch(() => mostrarAviso("Não foi possível sincronizar", "erro"))
+      .then(() => {
+        setErroEnvio("")
 
-  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, foto, pausado])
+        // Voltou a funcionar depois de uma falha
+        if (avisouErro.current) {
+          avisouErro.current = false
+          mostrarAviso("Tudo sincronizado de novo")
+        }
+      })
+      .catch((erro) => {
+        const mensagem = mensagemErroNuvem(erro?.code)
 
-  return { sincronizado, erroSincronia }
+        setErroEnvio(mensagem)
+
+        // Avisa uma vez por falha (não a cada tentativa)
+        if (!avisouErro.current) {
+          avisouErro.current = true
+          mostrarAviso(mensagem, "erro")
+        }
+      })
+      .finally(() => setEmVoo((n) => Math.max(0, n - 1)))
+
+  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, foto, pausado, tentativa])
+
+  // Tentar de novo: manda tudo outra vez e volta a escutar a nuvem
+  function tentarDeNovo() {
+    ultimoRemoto.current = ""
+    setErroEnvio("")
+    setErroEscuta("")
+    setTentativa((n) => n + 1)
+  }
+
+  // Voltou a internet depois de uma falha: tenta sozinho
+  useEffect(() => {
+    if (!erroEnvio && !erroEscuta) {
+      return undefined
+    }
+
+    window.addEventListener("online", tentarDeNovo)
+    return () => window.removeEventListener("online", tentarDeNovo)
+  }, [erroEnvio, erroEscuta])
+
+  // Fechar a aba com alteração ainda sem chegar na nuvem: pede confirmação
+  const pendente = emVoo > 0 || Boolean(erroEnvio)
+
+  useEffect(() => {
+    if (!pendente) {
+      return undefined
+    }
+
+    const avisar = (evento) => {
+      evento.preventDefault()
+      evento.returnValue = ""
+    }
+
+    window.addEventListener("beforeunload", avisar)
+    return () => window.removeEventListener("beforeunload", avisar)
+  }, [pendente])
+
+  return { sincronizado, erroSincronia, enviando: emVoo > 0, erroEnvio, erroEscuta, tentarDeNovo }
 }

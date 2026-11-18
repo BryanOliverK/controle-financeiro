@@ -4,6 +4,15 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.11.0",
+    titulo: "Sincronização à vista",
+    itens: [
+      "Indicador no topo: Sincronizado, Salvando, Sem conexão ou Não salvou",
+      "Se uma gravação falhar, o aviso explica o motivo e há o botão Tentar de novo",
+      "Ao voltar a internet o app reenvia sozinho; fechar a aba com alteração sem enviar pede confirmação"
+    ]
+  },
+  {
     versao: "1.10.0",
     titulo: "Mais rápido e mais bonito",
     itens: [
