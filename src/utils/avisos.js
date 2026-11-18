@@ -10,6 +10,7 @@ import { brl, chaveMes } from "./formatar"
 import { nomeCategoria } from "./categorias"
 import { gastoDaCategoria, statusOrcamento } from "./orcamentos"
 import { diasParaVencer, estaQuitada, saldoDivida } from "./dividas"
+import { gastoDoMes, statusMeta } from "./metaGeral"
 import { NOVIDADES } from "../novidades"
 
 const DIAS_DE_ANTECEDENCIA = 3
@@ -36,7 +37,7 @@ export function limparAvisosLidos(bruto) {
 }
 
 // [{ id, nivel: "urgente"|"alerta"|"info", tipo, titulo, texto, destino, ordem }]
-export function gerarAvisos({ transacoes, recorrentes, cartoes, faturasPagas, orcamentos, previsao, dividas = [] }, hoje = new Date()) {
+export function gerarAvisos({ transacoes, recorrentes, cartoes, faturasPagas, orcamentos, previsao, dividas = [], metaGasto = 0 }, hoje = new Date()) {
 
   const avisos = []
   const pagas = new Set(faturasPagas)
@@ -148,6 +149,34 @@ export function gerarAvisos({ transacoes, recorrentes, cartoes, faturasPagas, or
         ordem: dias
       })
     }
+  }
+
+  // ----- Meta geral de gastos do mês -----
+  const gastoMes = gastoDoMes(transacoes, mes)
+  const statusDaMeta = statusMeta(gastoMes, metaGasto)
+
+  if (statusDaMeta && statusDaMeta.nivel !== "ok") {
+    avisos.push(
+      statusDaMeta.nivel === "estourado"
+        ? {
+            id: `meta-${mes}-estourada`,
+            nivel: "urgente",
+            tipo: "orcamento",
+            titulo: "Meta de gastos do mês estourada",
+            texto: `Você gastou ${brl(gastoMes)} de ${brl(metaGasto)} neste mês.`,
+            destino: "graficos",
+            ordem: 5
+          }
+        : {
+            id: `meta-${mes}-alerta`,
+            nivel: "alerta",
+            tipo: "orcamento",
+            titulo: `Meta do mês: ${Math.floor(statusDaMeta.porcentagem)}% usada`,
+            texto: `Restam ${brl(statusDaMeta.restante)} da meta de ${brl(metaGasto)}.`,
+            destino: "graficos",
+            ordem: 15
+          }
+    )
   }
 
   // ----- Orçamentos do mês -----

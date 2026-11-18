@@ -4,6 +4,15 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.14.0",
+    titulo: "Resumo do ano e meta de gastos",
+    itens: [
+      "Resumo do ano em Gráficos: entradas e saídas mês a mês, média de gasto e o que mais pesou",
+      "Meta geral de gastos do mês: um limite só para tudo, com barra no Início e sugestão pela sua média",
+      "Avisos ao chegar em 80% da meta e ao passar dela, na hora de lançar e na aba Avisos"
+    ]
+  },
+  {
     versao: "1.13.0",
     titulo: "Acabamento",
     itens: [

@@ -10,6 +10,7 @@ import { limparFoto } from '../utils/foto'
 import { limparDividas } from '../utils/dividas'
 import { unirPorId } from '../utils/listas'
 import { limparOrcamentos } from '../utils/orcamentos'
+import { limparMeta } from '../utils/metaGeral'
 import { mensagemErroNuvem } from '../utils/nuvem'
 
 // Sincronização com o Firestore (documento usuarios/{uid}).
@@ -25,8 +26,8 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso, pausad
   const ultimoRemoto = useRef("")
   const avisouErro = useRef(false)
 
-  const { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, foto } = dados
-  const { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas, setContas, setTransferencias, setFoto } = alterar
+  const { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, foto, metaGasto } = dados
+  const { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas, setContas, setTransferencias, setFoto, setMetaGasto } = alterar
 
   // Sem login: volta a "não sincronizado"
   useEffect(() => {
@@ -88,6 +89,7 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso, pausad
     const contasRemoto = limparContas(dados.contas)
     const transferenciasRemoto = limparTransferencias(dados.transferencias)
     const fotoRemoto = limparFoto(dados.foto)
+    const metaRemoto = limparMeta(dados.metaGasto)
 
     const chave = JSON.stringify({
       transacoes: remotasT,
@@ -103,7 +105,8 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso, pausad
       dividas: dividasRemoto,
       contas: contasRemoto,
       transferencias: transferenciasRemoto,
-      foto: fotoRemoto
+      foto: fotoRemoto,
+      metaGasto: metaRemoto
     })
 
     if (chave !== ultimoRemoto.current) {
@@ -159,6 +162,10 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso, pausad
       setFoto((local) =>
         primeiraVez ? (fotoRemoto || local) : fotoRemoto
       )
+
+      setMetaGasto((local) =>
+        primeiraVez ? (metaRemoto || limparMeta(local)) : metaRemoto
+      )
     }
 
     localStorage.setItem(chaveMigracao, "1")
@@ -197,7 +204,8 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso, pausad
       dividas,
       contas,
       transferencias,
-      foto
+      foto,
+      metaGasto: limparMeta(metaGasto)
     }))
 
     const chave = JSON.stringify(dados)
@@ -233,7 +241,7 @@ export function useSincronizacao({ usuario, dados, alterar, mostrarAviso, pausad
       })
       .finally(() => setEmVoo((n) => Math.max(0, n - 1)))
 
-  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, foto, pausado, tentativa])
+  }, [usuario, sincronizado, transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, foto, metaGasto, pausado, tentativa])
 
   // Tentar de novo: manda tudo outra vez e volta a escutar a nuvem
   function tentarDeNovo() {

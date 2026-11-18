@@ -4,6 +4,7 @@ import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Resumo from './components/Resumo'
 import LancamentoRapido from './components/LancamentoRapido'
+import MetaCartao from './components/MetaCartao'
 import StatusNuvem from './components/StatusNuvem'
 import TelaBloqueio from './components/TelaBloqueio'
 import { useBloqueio } from './hooks/useBloqueio'
@@ -72,6 +73,7 @@ import {
 } from './utils/formatar'
 import { unirPorId } from './utils/listas'
 import { gastoDaCategoria, mensagemAlerta } from './utils/orcamentos'
+import { gastoDoMes, limparMeta, mensagemAlertaMeta } from './utils/metaGeral'
 import { criarRecorrente, gerarPendentes } from './utils/recorrentes'
 import { imprimirRelatorio, montarRelatorioHtml } from './utils/relatorio'
 import { validarTransacao } from './utils/validacao'
@@ -105,6 +107,8 @@ const CARREGAR = {
   AjudaAtalhos: () => import('./components/AjudaAtalhos'),
   ComparacaoMeses: () => import('./components/ComparacaoMeses'),
   Orcamentos: () => import('./components/Orcamentos'),
+  MetaGeral: () => import('./components/MetaGeral'),
+  ResumoAnual: () => import('./components/ResumoAnual'),
   Recorrentes: () => import('./components/Recorrentes')
 }
 
@@ -121,6 +125,8 @@ const Caixinhas = lazy(CARREGAR.Caixinhas)
 const AjudaAtalhos = lazy(CARREGAR.AjudaAtalhos)
 const ComparacaoMeses = lazy(CARREGAR.ComparacaoMeses)
 const Orcamentos = lazy(CARREGAR.Orcamentos)
+const MetaGeral = lazy(CARREGAR.MetaGeral)
+const ResumoAnual = lazy(CARREGAR.ResumoAnual)
 const Recorrentes = lazy(CARREGAR.Recorrentes)
 
 const FORM_VAZIO = {
@@ -167,6 +173,7 @@ function App() {
   const [cdi, setCdi] = useLocalStorage("cdi", "14.5", { texto: true })
   const [pctCdi, setPctCdi] = useLocalStorage("pctCdi", "100", { texto: true })
   const [orcamentos, setOrcamentos] = useLocalStorage("orcamentos", {})
+  const [metaGasto, setMetaGasto] = useLocalStorage("metaGasto", 0)
   const [recorrentes, setRecorrentes] = useLocalStorage("recorrentes", [])
   const [categoriasExtras, setCategoriasExtras] = useLocalStorage("categoriasExtras", [])
   const [cartoes, setCartoes] = useLocalStorage("cartoes", [])
@@ -208,8 +215,8 @@ function App() {
     usuario,
     mostrarAviso,
     pausado: excluindoConta,
-    dados: { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, foto },
-    alterar: { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas, setContas, setTransferencias, setFoto }
+    dados: { transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, avisosLidos, dividas, contas, transferencias, foto, metaGasto },
+    alterar: { setTransacoes, setCaixinhas, setCdi, setPctCdi, setOrcamentos, setRecorrentes, setCategoriasExtras, setCartoes, setFaturasPagas, setAvisosLidos, setDividas, setContas, setTransferencias, setFoto, setMetaGasto }
   })
 
 
@@ -261,8 +268,8 @@ function App() {
 
   // Avisos (vencimentos, lembretes, orçamento, novidades) e quantos faltam ler
   const avisos = useMemo(
-    () => gerarAvisos({ transacoes: visiveis, recorrentes, cartoes, faturasPagas, orcamentos, previsao, dividas }),
-    [visiveis, recorrentes, cartoes, faturasPagas, orcamentos, previsao, dividas]
+    () => gerarAvisos({ transacoes: visiveis, recorrentes, cartoes, faturasPagas, orcamentos, previsao, dividas, metaGasto }),
+    [visiveis, recorrentes, cartoes, faturasPagas, orcamentos, previsao, dividas, metaGasto]
   )
 
   const lidosSet = useMemo(() => new Set(avisosLidos), [avisosLidos])
@@ -430,15 +437,8 @@ function App() {
         setRecorrentes((atuais) => [...atuais, criarRecorrente(nova, nova.data)])
       }
 
-      // Saída que chegou perto (ou passou) do orçamento da categoria
-      const limite = orcamentos[nova.categoria]
-      const mesNova = chaveMes(nova.data)
-
-      const gastoAntes = gastoDaCategoria(visiveis, nova.categoria, mesNova)
-
-      const alerta = nova.tipo === "saida" && limite
-        ? mensagemAlerta(nova.categoria, gastoAntes, arredondar(gastoAntes + nova.valor), limite)
-        : null
+      // Saída que chegou perto (ou passou) do orçamento da categoria ou da meta geral
+      const alerta = alertasDoLancamento(nova)
 
       const mensagem = parcelando
         ? `Compra parcelada em ${quantidade}x adicionada`
@@ -446,11 +446,42 @@ function App() {
 
       mostrarAviso(
         alerta ? `${mensagem}. ${alerta}` : mensagem,
-        alerta && alerta.includes("estourado") ? "erro" : "info"
+        alerta && alerta.includes("estourad") ? "erro" : "info"
       )
     }
 
     setForm(FORM_VAZIO)
+  }
+
+  function definirMetaGasto(valor) {
+    const meta = limparMeta(valor)
+
+    setMetaGasto(meta)
+    mostrarAviso(meta > 0 ? "Meta de gastos salva" : "Meta de gastos removida")
+  }
+
+  // Texto de aviso quando uma saída nova chega perto (ou passa) do orçamento
+  // da categoria ou da meta geral do mês. null se não há o que avisar.
+  function alertasDoLancamento(nova) {
+    if (nova.tipo !== "saida") {
+      return null
+    }
+
+    const mes = chaveMes(nova.data)
+    const avisos = []
+    const limite = orcamentos[nova.categoria]
+
+    if (limite) {
+      const antes = gastoDaCategoria(visiveis, nova.categoria, mes)
+      avisos.push(mensagemAlerta(nova.categoria, antes, arredondar(antes + nova.valor), limite))
+    }
+
+    if (metaGasto > 0 && nova.categoria !== "caixinha") {
+      const antes = gastoDoMes(visiveis, mes)
+      avisos.push(mensagemAlertaMeta(antes, arredondar(antes + nova.valor), metaGasto))
+    }
+
+    return avisos.filter(Boolean).join(". ") || null
   }
 
   // Lançamento rápido ("mercado 85"): já nasce pronto, com Desfazer
@@ -466,12 +497,7 @@ function App() {
       data: new Date().toISOString()
     }
 
-    const limite = orcamentos[categoria]
-    const gastoAntes = gastoDaCategoria(visiveis, categoria, chaveMes(nova.data))
-
-    const alerta = tipo === "saida" && limite
-      ? mensagemAlerta(categoria, gastoAntes, arredondar(gastoAntes + nova.valor), limite)
-      : null
+    const alerta = alertasDoLancamento(nova)
 
     setTransacoes((atuais) => [...atuais, nova])
 
@@ -479,7 +505,7 @@ function App() {
 
     mostrarAviso(
       alerta ? `${texto}. ${alerta}` : texto,
-      alerta && alerta.includes("estourado") ? "erro" : "info",
+      alerta && alerta.includes("estourad") ? "erro" : "info",
       () => {
         setTransacoes((atuais) => atuais.filter((t) => t.id !== nova.id))
         fecharAviso()
@@ -1010,7 +1036,7 @@ function App() {
   // Backup
 
   function exportarBackup() {
-    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, dividas, contas, transferencias })
+    baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, dividas, contas, transferencias, metaGasto })
     mostrarAviso("Backup exportado")
   }
 
@@ -1062,8 +1088,10 @@ function App() {
       const novasTransf = backup.transferencias
         .filter((t) => !idsTransf.has(t.id)).length
 
+      const metaNova = !(metaGasto > 0) && backup.metaGasto > 0
+
       if (
-        novasTransacoes === 0 && novasCaixinhas === 0 &&
+        !metaNova && novasTransacoes === 0 && novasCaixinhas === 0 &&
         novasRecorrentes === 0 && novosLimites === 0 &&
         novasCategorias === 0 && novosCartoes === 0 && novasDividas === 0 &&
         novasContas === 0 && novasTransf === 0
@@ -1083,6 +1111,7 @@ function App() {
       setDividas((atuais) => limparDividas(unirPorId(atuais, backup.dividas)))
       setContas((atuais) => limparContas(unirPorId(atuais, backup.contas)))
       setTransferencias((atuais) => limparTransferencias(unirPorId(atuais, backup.transferencias)))
+      setMetaGasto((atual) => (atual > 0 ? atual : backup.metaGasto))
 
       mostrarAviso(
         "Backup importado: " +
@@ -1471,6 +1500,12 @@ function App() {
                 animar={!modoLeve}
               />
 
+              <MetaCartao
+                gasto={gastoDoMes(visiveis, mesOrcamento)}
+                meta={metaGasto}
+                onAjustar={() => mudarAba("graficos")}
+              />
+
               {visiveis.length > 0 && <Previsao previsao={previsao} />}
 
               <div className="secao-topo">
@@ -1605,6 +1640,10 @@ function App() {
 
               <ComparacaoMeses transacoes={visiveis} />
 
+              <h2 className="titulo-secao titulo-espaco">Resumo do ano</h2>
+
+              <ResumoAnual transacoes={visiveis} />
+
               <h2 className="titulo-secao titulo-espaco">Gastos por categoria</h2>
 
               <Categorias
@@ -1613,6 +1652,14 @@ function App() {
               />
 
               <h2 className="titulo-secao titulo-espaco">Orçamento</h2>
+
+              <MetaGeral
+                key={metaGasto}
+                transacoes={visiveis}
+                meta={metaGasto}
+                mes={mesOrcamento}
+                onDefinir={definirMetaGasto}
+              />
 
               <Orcamentos
                 transacoes={visiveis}

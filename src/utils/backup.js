@@ -4,13 +4,14 @@ import { limparCategoriasExtras } from "./categorias"
 import { limparContas, limparTransferencias } from "./contas"
 import { limparDividas } from "./dividas"
 import { limparOrcamentos } from "./orcamentos"
+import { limparMeta } from "./metaGeral"
 import { limparParcela } from "./parcelas"
 
 const VERSAO = 1
 const TAMANHO_MAXIMO = 5 * 1024 * 1024 // 5 MB: um backup de verdade é bem menor
 
 // Baixa um arquivo .json com todos os dados do app
-export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, dividas = [], contas = [], transferencias = [] }) {
+export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, recorrentes, categoriasExtras, cartoes, faturasPagas, dividas = [], contas = [], transferencias = [], metaGasto = 0 }) {
   const conteudo = JSON.stringify(
     {
       app: "controle-financeiro",
@@ -27,7 +28,8 @@ export function baixarBackup({ transacoes, caixinhas, cdi, pctCdi, orcamentos, r
       faturasPagas,
       dividas,
       contas,
-      transferencias
+      transferencias,
+      metaGasto
     },
     null,
     2
@@ -192,6 +194,7 @@ export async function lerBackup(arquivo) {
     faturasPagas: limparFaturasPagas(dados.faturasPagas),
     dividas: limparDividas(dados.dividas),
     contas: limparContas(dados.contas),
-    transferencias: limparTransferencias(dados.transferencias)
+    transferencias: limparTransferencias(dados.transferencias),
+    metaGasto: limparMeta(dados.metaGasto)
   }
 }
