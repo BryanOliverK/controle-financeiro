@@ -4,6 +4,15 @@
 
 export const NOVIDADES = [
   {
+    versao: "1.12.0",
+    titulo: "Bloqueio e privacidade",
+    itens: [
+      "Bloqueio por PIN (4 a 6 números) e, se o aparelho tiver, biometria",
+      "O app bloqueia sozinho depois de um tempo sem uso, e dá para sair da conta sozinho também",
+      "Tudo em Perfil > Privacidade e bloqueio; o PIN vale só neste aparelho"
+    ]
+  },
+  {
     versao: "1.11.0",
     titulo: "Sincronização à vista",
     itens: [

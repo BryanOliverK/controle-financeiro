@@ -5,6 +5,8 @@ import Sidebar from './components/Sidebar'
 import Resumo from './components/Resumo'
 import LancamentoRapido from './components/LancamentoRapido'
 import StatusNuvem from './components/StatusNuvem'
+import TelaBloqueio from './components/TelaBloqueio'
+import { useBloqueio } from './hooks/useBloqueio'
 import { useOnline } from './hooks/useOnline'
 import { estadoNuvem } from './utils/nuvem'
 import Transacao from './components/Transacao'
@@ -170,6 +172,9 @@ function App() {
     entrarComGoogle, entrarComEmail, criarContaComEmail, recuperarSenha, sair,
     salvarNome, enviarRedefinicaoDeSenha, excluirConta: excluirContaDeLogin
   } = useLogin()
+
+  // Bloqueio por PIN e saída por inatividade
+  const bloqueio = useBloqueio({ usuario, onSair: sair })
 
   // Enquanto a conta é excluída, a sincronização fica parada (senão recriaria os dados)
   const [excluindoConta, setExcluindoConta] = useState(false)
@@ -1229,7 +1234,7 @@ function App() {
       d: () => setModoEscuro(!modoEscuro),
       "?": () => setAjudaAberta(true)
     },
-    Boolean(usuario) && sincronizado && !ajudaAberta
+    Boolean(usuario) && sincronizado && !ajudaAberta && !bloqueio.bloqueado
   )
 
   // Telas de espera (login, sincronização)
@@ -1247,6 +1252,25 @@ function App() {
         onRecuperarSenha={recuperarSenha}
         erro={erroLogin}
         modoEscuro={modoEscuro}
+      />
+    )
+  }
+
+  // Com PIN ativo, nada do app aparece até destravar
+  if (bloqueio.bloqueado) {
+    return (
+      <TelaBloqueio
+        nome={usuario.displayName}
+        foto={foto || usuario.photoURL || ""}
+        iniciais={iniciais(usuario.displayName, usuario.email)}
+        tamanho={bloqueio.config.pin.tam}
+        temBiometria={Boolean(bloqueio.config.bio)}
+        onPin={bloqueio.destravarComPin}
+        onBiometria={bloqueio.destravarComBiometria}
+        esperaAtualMs={bloqueio.esperaAtualMs}
+        onSair={sair}
+        modoEscuro={modoEscuro}
+        modoLeve={modoLeve}
       />
     )
   }
@@ -1279,6 +1303,17 @@ function App() {
               <button className="btn-instalar" onClick={instalar}>
                 <Icone nome="baixar" tamanho={16} />
                 Instalar app
+              </button>
+            )}
+
+            {bloqueio.config.pin && (
+              <button
+                className="btn-olho"
+                onClick={bloqueio.bloquearAgora}
+                aria-label="Bloquear o app agora"
+                title="Bloquear agora"
+              >
+                <Icone nome="cadeado" tamanho={18} />
               </button>
             )}
 
@@ -1526,6 +1561,8 @@ function App() {
               onIniciarPrivado={() => setIniciarPrivado(!iniciarPrivado)}
               modoLeve={modoLeve}
               onModoLeve={() => setModoLeve(!modoLeve)}
+              bloqueio={bloqueio}
+              onAviso={mostrarAviso}
               onSalvarNome={salvarNome}
               onEnviarRedefinicao={enviarRedefinicaoDeSenha}
               onSair={sair}

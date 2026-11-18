@@ -106,6 +106,18 @@ const CAMINHOS = {
   ),
   lua: <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />,
 
+  cadeado: (
+    <>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  voltar: (
+    <>
+      <path d="M21 5H9l-6 7 6 7h12z" />
+      <path d="M13 9.5l5 5M18 9.5l-5 5" />
+    </>
+  ),
   nuvem: <path d="M7 18a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 8.7 4.7 4.7 0 0 1 17.5 18H7z" />,
   nuvemOff: (
     <>

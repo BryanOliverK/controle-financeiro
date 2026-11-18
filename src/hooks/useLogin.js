@@ -23,7 +23,8 @@ import { usaSenha, validarNomePerfil } from '../utils/perfil'
 // Se um dia surgir um dado novo guardado no aparelho, ele entra aqui também.
 export const CHAVES_LOCAIS = [
   "transacoes", "caixinhas", "saldo", "entradas", "saidas", "cdi", "pctCdi",
-  "orcamentos", "recorrentes", "categoriasExtras", "cartoes", "faturasPagas", "avisosLidos", "dividas", "contas", "transferencias", "foto"
+  "orcamentos", "recorrentes", "categoriasExtras", "cartoes", "faturasPagas", "avisosLidos", "dividas", "contas", "transferencias", "foto",
+  "bloqueio", "bloqueioTentativas"
 ]
 
 // Login e logout (Google e e-mail/senha). Não mexe em dados financeiros.

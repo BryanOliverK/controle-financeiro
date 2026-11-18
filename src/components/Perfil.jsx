@@ -2,6 +2,7 @@ import { useRef, useState } from "react"
 import Backup from "./Backup"
 import Icone from "./Icone"
 import ConfirmarAcao from "./ConfirmarAcao"
+import BloqueioConfig from "./BloqueioConfig"
 import {
   LIMITE_NOME_PERFIL,
   PALAVRA_EXCLUIR,
@@ -30,7 +31,7 @@ function Interruptor({ ligado, onAlternar, titulo, texto }) {
 // Perfil: dados da conta, preferências deste aparelho, backup e segurança.
 function Perfil({
   usuario, versao, dados, foto, onTrocarFoto, onRemoverFoto,
-  modoEscuro, onModoEscuro, iniciarPrivado, onIniciarPrivado, modoLeve, onModoLeve,
+  modoEscuro, onModoEscuro, iniciarPrivado, onIniciarPrivado, modoLeve, onModoLeve, bloqueio, onAviso,
   onSalvarNome, onEnviarRedefinicao, onSair, onExcluirConta,
   onExportarBackup, onImportarBackup
 }) {
@@ -217,6 +218,8 @@ function Perfil({
       </div>
 
       <Backup onExportar={onExportarBackup} onImportar={onImportarBackup} />
+
+      {bloqueio && <BloqueioConfig b={bloqueio} onAviso={onAviso} />}
 
       <div className="perfil-bloco">
         <h3>Segurança</h3>
